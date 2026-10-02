@@ -17,7 +17,13 @@ export const translations = {
     clearCancel: 'Cancel',
     play: 'Play',
     resume: 'Resume',
+    playAgain: 'Play Again',
     optimalGoal: 'Optimal Moves',
+    // Difficulty
+    difficultyLabel: 'Difficulty',
+    difficultyEasy: 'Easy',
+    difficultyMedium: 'Medium',
+    difficultyHard: 'Hard',
     // In game errors / notifications (subtle, non-intrusive)
     errSeedPermanent: 'The initial star light (✦) cannot be extinguished.',
     errNotLit: 'You can only place a light on an illuminated square.',
@@ -39,6 +45,9 @@ export const translations = {
     archiveTitle: 'Past Puzzles',
     archiveStatusSolved: 'Solved',
     archiveStatusUnsolved: 'Unsolved',
+    archiveFutureLocked: 'Available on release date',
+    perfectBadge: 'Perfect',
+    clearedBadge: 'Cleared',
     playPuzzle: 'Play',
     // How to Play modal
     rulesTitle: 'Game Rules',
@@ -71,7 +80,13 @@ export const translations = {
     clearCancel: '取消',
     play: '开始挑战',
     resume: '继续游戏',
+    playAgain: '再玩一遍',
     optimalGoal: '理论最少步数',
+    // Difficulty
+    difficultyLabel: '难度',
+    difficultyEasy: '简单',
+    difficultyMedium: '中等',
+    difficultyHard: '困难',
     // In game errors
     errSeedPermanent: '初始星芒起始灯（✦）无法熄灭。',
     errNotLit: '只能在已被光线照亮的格子上放灯。',
@@ -93,6 +108,9 @@ export const translations = {
     archiveTitle: '往期谜题',
     archiveStatusSolved: '已通关',
     archiveStatusUnsolved: '未挑战',
+    archiveFutureLocked: '待解锁',
+    perfectBadge: '完美',
+    clearedBadge: '已通关',
     playPuzzle: '开始挑战',
     // How to Play modal
     rulesTitle: '游戏规则',

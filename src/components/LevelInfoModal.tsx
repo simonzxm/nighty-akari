@@ -8,7 +8,6 @@ import {
   Copy,
   Check,
   RotateCcw,
-  CheckCircle2,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { PuzzleDefinition } from '../engine/types';
@@ -41,15 +40,15 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
   const { lang, setLang, t } = useI18n();
   const [copied, setCopied] = useState(false);
 
-  // Trigger celebration confetti on win
+  // Trigger confetti on win
   useEffect(() => {
     if (isOpen && isWon) {
       try {
         confetti({
-          particleCount: 55,
-          spread: 65,
+          particleCount: 50,
+          spread: 60,
           origin: { y: 0.6 },
-          colors: ['#ffffff', '#facc15', '#fef08a', '#ca8a04'],
+          colors: ['#ffffff', '#facc15', '#fef08a'],
         });
       } catch {}
     }
@@ -93,17 +92,31 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
     }
   };
 
+  const difficultyText =
+    puzzle.difficulty === 'easy'
+      ? t.difficultyEasy
+      : puzzle.difficulty === 'medium'
+      ? t.difficultyMedium
+      : t.difficultyHard;
+
+  const difficultyColor =
+    puzzle.difficulty === 'easy'
+      ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+      : puzzle.difficulty === 'medium'
+      ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+      : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-sm bg-[#0c0c0f] border border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-2xl text-center text-zinc-100 relative shadow-black/80 flex flex-col">
-        {/* Top bar inside modal: Language Toggle & Close button */}
-        <div className="flex items-center justify-between pb-3 -mt-1 -mx-1">
+      <div className="w-full max-w-xs sm:max-w-sm bg-[#0c0c0f] border border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-2xl text-center text-zinc-100 relative shadow-black/80 flex flex-col">
+        {/* Top Control Bar: Language & Close */}
+        <div className="flex items-center justify-between pb-2 -mt-1 -mx-1">
           <button
             type="button"
             onClick={toggleLanguage}
             title={t.language}
             aria-label={t.language}
-            className="px-2.5 py-1 text-xs font-mono font-medium text-zinc-400 hover:text-white rounded-lg transition-colors flex items-center gap-1 hover:bg-zinc-800/80"
+            className="px-2.5 py-1 text-xs font-mono font-medium text-zinc-400 hover:text-white rounded-lg transition-colors flex items-center gap-1 hover:bg-zinc-800/80 cursor-pointer"
           >
             <Languages className="w-3.5 h-3.5" />
             <span>{lang === 'en' ? '中' : 'EN'}</span>
@@ -113,162 +126,208 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={t.close}
-            className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors hover:bg-zinc-800/80"
+            className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors hover:bg-zinc-800/80 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* ===================== VIEW 1: VICTORY SETTLEMENT ===================== */}
+        {/* Unified Header: Icon, Number, Date, Difficulty (No titles or subtitles) */}
+        <div className="pt-1 pb-2">
+          <div className="w-12 h-12 rounded-full bg-white/5 border border-zinc-800 flex items-center justify-center mx-auto mb-3 text-white">
+            {isWon ? (
+              <Sparkles className="w-5 h-5 text-amber-300" />
+            ) : (
+              <span className="text-2xl leading-none">✦</span>
+            )}
+          </div>
+
+          <div className="text-xl font-bold tracking-tight text-white mb-1">
+            {t.dailyNo(puzzle.number)}
+          </div>
+
+          <div className="text-xs text-zinc-400 font-mono mb-2.5">
+            {formatGameDate(puzzle.date, lang)}
+          </div>
+
+          {/* Difficulty badge */}
+          <div className="inline-block">
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${difficultyColor}`}
+            >
+              {difficultyText}
+            </span>
+          </div>
+        </div>
+
+        {/* Stats & Status Area (Clean typography without card boxes) */}
         {isWon ? (
-          <div className="py-2 animate-fadeIn">
-            <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-3.5 text-white shadow-[0_0_20px_rgba(255,255,255,0.15)]">
-              <Sparkles className="w-7 h-7 text-amber-300 animate-pulse" />
+          <div className="pt-2 pb-4">
+            {/* Won Status Indicator */}
+            <div className="mt-1 mb-4">
+              {isOptimal ? (
+                <div className="text-xs text-amber-400 font-medium inline-flex items-center gap-1.5">
+                  <span>★</span>
+                  <span>{t.victoryOptimal}</span>
+                </div>
+              ) : (
+                <div className="text-xs text-emerald-400 font-medium inline-flex items-center gap-1.5">
+                  <span>✓</span>
+                  <span>{t.victoryGood}</span>
+                </div>
+              )}
             </div>
 
-            <h2 className="text-xl font-bold tracking-tight text-white mb-0.5">
-              {t.victoryTitle}
-            </h2>
-            <p className="text-xs text-zinc-400 font-mono">
-              {t.dailyNo(puzzle.number)} · {formatGameDate(puzzle.date, lang)}
-            </p>
-
-            {isOptimal && (
-              <div className="mt-3 py-1 px-3 bg-amber-400/15 border border-amber-400/30 rounded-full inline-flex items-center gap-1.5 text-xs text-amber-300 font-medium">
-                <span>★</span>
-                <span>{t.victoryOptimal}</span>
-              </div>
-            )}
-
-            {/* Clean minimal stats presentation */}
-            <div className="grid grid-cols-2 gap-3 my-5">
-              <div className="p-3 bg-zinc-900/80 border border-zinc-800/80 rounded-2xl">
-                <span className="block text-[11px] text-zinc-400 uppercase tracking-wider mb-1">
+            {/* Revealed Stats: Time & Moves (Optimal benchmark revealed only here) */}
+            <div className="flex items-center justify-center gap-8 py-3 my-2 border-y border-zinc-800/80">
+              <div>
+                <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-0.5">
                   {t.timeLabel}
-                </span>
-                <strong className="text-xl font-mono font-semibold text-white">
+                </div>
+                <div className="text-2xl font-mono font-semibold text-white">
                   {timeFormatted}
-                </strong>
+                </div>
               </div>
-              <div className="p-3 bg-zinc-900/80 border border-zinc-800/80 rounded-2xl">
-                <span className="block text-[11px] text-zinc-400 uppercase tracking-wider mb-1">
+
+              <div className="w-px h-8 bg-zinc-800" />
+
+              <div>
+                <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-0.5">
                   {t.movesLabel}
-                </span>
-                <strong className="text-xl font-mono font-semibold text-white">
+                </div>
+                <div className="text-2xl font-mono font-semibold text-white">
                   {moves}
-                  <span className="text-xs text-zinc-400 font-normal ml-1 font-mono">
+                  <span className="text-xs text-zinc-500 font-normal ml-1 font-mono">
                     / {puzzle.optimalMoves}
                   </span>
-                </strong>
+                </div>
               </div>
             </div>
 
-            {/* Primary Action: Copy Result */}
-            <button
-              type="button"
-              onClick={handleCopy}
-              className={`w-full py-3.5 px-4 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2 select-none shadow-lg ${
-                copied
-                  ? 'bg-emerald-500 text-black shadow-emerald-500/20'
-                  : 'bg-white hover:bg-zinc-200 text-black shadow-white/10 active:scale-[0.98]'
-              }`}
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 stroke-[2.5]" />
-                  <span>{t.copiedNotice}</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 stroke-[2.5]" />
-                  <span>{t.copyResult}</span>
-                </>
-              )}
-            </button>
+            {/* Action Buttons: Copy Result & Play Again */}
+            <div className="space-y-2.5 mt-5">
+              <button
+                type="button"
+                onClick={handleCopy}
+                className={`w-full py-3 px-4 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2 select-none shadow-lg cursor-pointer ${
+                  copied
+                    ? 'bg-emerald-500 text-black shadow-emerald-500/20'
+                    : 'bg-white hover:bg-zinc-200 text-black shadow-white/10 active:scale-[0.98]'
+                }`}
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 stroke-[2.5]" />
+                    <span>{t.copiedNotice}</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 stroke-[2.5]" />
+                    <span>{t.copyResult}</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onRestart();
+                  onClose();
+                }}
+                className="w-full py-2.5 px-4 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{t.playAgain}</span>
+              </button>
+            </div>
           </div>
         ) : (
-          /* ===================== VIEW 2: LEVEL INFO & START ===================== */
-          <div className="py-2 animate-fadeIn">
-            {/* Minimalist radiant star icon */}
-            <div className="w-12 h-12 rounded-full bg-white/5 border border-zinc-800 flex items-center justify-center mx-auto mb-3 text-white">
-              <span className="text-2xl leading-none">✦</span>
-            </div>
-
-            <div className="text-xs text-amber-400 font-mono tracking-wider uppercase mb-1">
-              {t.dailyNo(puzzle.number)}
-            </div>
-
-            <h2 className="text-2xl font-bold tracking-tight text-white mb-1">
-              {puzzle.name[lang]}
-            </h2>
-
-            {puzzle.subtitle && (
-              <p className="text-xs text-zinc-400 mb-2">
-                {puzzle.subtitle[lang]}
-              </p>
-            )}
-
-            <p className="text-xs text-zinc-400 font-mono">
-              {formatGameDate(puzzle.date, lang)}
-            </p>
-
-            {/* Target information */}
-            <div className="my-5 p-3.5 bg-zinc-900/60 border border-zinc-800/80 rounded-2xl flex items-center justify-between text-xs">
-              <span className="text-zinc-400">{t.optimalGoal}</span>
-              <span className="font-mono font-bold text-white text-sm">
-                {puzzle.optimalMoves} {lang === 'zh' ? '步' : 'moves'}
-              </span>
-            </div>
-
-            {/* If previously solved, show best badge */}
-            {record?.completed && (
-              <div className="mb-4 py-1.5 px-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-center gap-1.5 text-xs text-emerald-400">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>
-                  {t.previouslySolved}: {record.moves} moves
-                </span>
+          <div className="pt-2 pb-4">
+            {/* If previously completed, display past best record (no spoiler on optimal moves) */}
+            {record?.completed ? (
+              <div className="py-2.5 my-2 border-y border-zinc-800/80">
+                <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-1">
+                  {t.previouslySolved}
+                </div>
+                <div className="font-mono text-sm text-zinc-200 flex items-center justify-center gap-1.5">
+                  {record.moves <= puzzle.optimalMoves ? (
+                    <span className="text-amber-400 font-semibold inline-flex items-center gap-1">
+                      <span>★</span> {record.moves} {lang === 'zh' ? '步' : 'moves'}
+                    </span>
+                  ) : (
+                    <span className="text-emerald-400 font-semibold inline-flex items-center gap-1">
+                      <span>✓</span> {record.moves} {lang === 'zh' ? '步' : 'moves'}
+                    </span>
+                  )}
+                </div>
               </div>
+            ) : moves > 0 ? (
+              /* In progress stats */
+              <div className="flex items-center justify-center gap-8 py-3 my-2 border-y border-zinc-800/80">
+                <div>
+                  <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-0.5">
+                    {t.timeLabel}
+                  </div>
+                  <div className="text-2xl font-mono font-semibold text-white">
+                    {timeFormatted}
+                  </div>
+                </div>
+
+                <div className="w-px h-8 bg-zinc-800" />
+
+                <div>
+                  <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-0.5">
+                    {t.movesLabel}
+                  </div>
+                  <div className="text-2xl font-mono font-semibold text-white">
+                    {moves}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="h-6" />
             )}
 
-            {/* Primary Action: Play / Resume */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-zinc-200 text-black font-semibold text-sm transition-all select-none shadow-lg shadow-white/10 active:scale-[0.98]"
-            >
-              {moves > 0 ? t.resume : t.play}
-            </button>
+            {/* Action Buttons: Play / Resume (and Restart if moves > 0) */}
+            <div className="space-y-2 mt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-zinc-200 text-black font-semibold text-sm transition-all select-none shadow-lg shadow-white/10 active:scale-[0.98] cursor-pointer"
+              >
+                {moves > 0 ? t.resume : t.play}
+              </button>
+
+              {moves > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onRestart();
+                    onClose();
+                  }}
+                  className="w-full py-2.5 px-4 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 border border-zinc-800 font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>{t.restart}</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Modal Bottom Actions: Archive Entrance & Reset */}
-        <div className="mt-4 pt-3.5 border-t border-zinc-800/80 flex items-center justify-between gap-2">
+        {/* Modal Bottom: Archive Entrance */}
+        <div className="mt-3 pt-3 border-t border-zinc-800/80">
           <button
             type="button"
             onClick={() => {
               onClose();
               onOpenArchive();
             }}
-            className="flex-1 py-2 px-3 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium rounded-xl border border-zinc-800 transition-colors flex items-center justify-center gap-1.5"
+            className="w-full py-2 px-3 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-medium rounded-xl border border-zinc-800 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5" />
             <span>{t.archive}</span>
           </button>
-
-          {moves > 0 && !isWon && (
-            <button
-              type="button"
-              onClick={() => {
-                onRestart();
-                onClose();
-              }}
-              title={t.restart}
-              className="py-2 px-3 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 text-xs font-medium rounded-xl border border-zinc-800 transition-colors flex items-center justify-center gap-1"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>{t.restart}</span>
-            </button>
-          )}
         </div>
       </div>
     </div>
