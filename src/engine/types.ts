@@ -21,12 +21,15 @@ export type PuzzleInput = {
   seed: [number, number]; // [row, col], 1-indexed
 };
 
-export type PuzzleDefinition = PuzzleInput & {
+export type PuzzleMetadata = {
   id: number;
   date: string; // YYYY-MM-DD
   optimalMoves: number;
   difficulty: 'easy' | 'medium' | 'hard';
 };
+
+export type PuzzleIndexEntry = PuzzleMetadata & { file: string };
+export type PuzzleDefinition = PuzzleInput & PuzzleMetadata;
 
 export type BoardModel = {
   id: number;

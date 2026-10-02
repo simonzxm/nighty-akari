@@ -38,9 +38,9 @@ Each file in `puzzles/source/` contains only a board and its permanent moon posi
 - IDs are generated as 1, 2, 3, …; dates are consecutive calendar days starting on `2026-10-01`, configured in `scripts/build-puzzles.ts`.
 - There is no manual index or schedule. Inserting, deleting, or renaming files can renumber later puzzles. Existing browser records are not migrated or cleared.
 
-`npm run puzzles:build` writes `puzzles/generated/puzzles.json` and `analysis.json`. Successful calculations are cached in `.puzzle-cache/` by board contents and analysis version. Generated files and cache are ignored by Git. Keep your source files backed up yourself; publishing uploads only the game JSON.
+`npm run puzzles:build` writes a lightweight `puzzles/generated/index.json`, individual `boards/<id>.json` files containing only `rows` and `seed`, and a local `analysis.json` report. The index contains only `id`, `date`, `difficulty`, `optimalMoves`, and a relative `file` address. All source puzzles must be successfully analyzed before the generated directory is replaced; stale local outputs are removed. Successful calculations are cached in `.puzzle-cache/` by board contents and analysis version. Generated files and cache are ignored by Git. Keep your source files backed up yourself; publishing uploads only the index and board files.
 
-Local development fetches the generated JSON and shows **all** puzzles in the existing archive, including future dates. Rebuild the puzzle data and refresh after editing sources. No editor or additional UI is provided.
+Local development fetches the generated index and current board, and shows **all** puzzles in the existing archive, including future dates. Opening the archive does not download boards; selecting a puzzle downloads only that board. Successfully loaded boards and pending requests are reused within the current page session. Rebuild the puzzle data and refresh after editing sources. No editor or additional UI is provided.
 
 ### Calculation and difficulty
 
@@ -83,7 +83,7 @@ One-time setup in your Cloudflare account:
    ]
    ```
 
-3. Add a Cloudflare Cache Rule for the puzzle hostname and `/puzzles.json` path with **Bypass cache**. Purge any old cached object after changing CORS/cache settings. Uploads also set `Cache-Control: no-cache, max-age=0, must-revalidate`.
+3. Add a Cloudflare Cache Rule for the puzzle hostname covering `/index.json` and `/boards/` paths with **Bypass cache**. Purge any old cached objects after changing CORS/cache settings. Both the index and mutable board files are uploaded with `Cache-Control: no-cache, max-age=0, must-revalidate`.
 4. Create an R2 **Object Read & Write** S3 token scoped to this bucket. Record its Access Key ID, Secret Access Key, and S3 endpoint.
 5. Copy `.env.example` to `.env.local` and fill in your public URL and local upload credentials. The file is ignored by Git. Never put credentials in `VITE_` variables or a Cloudflare Pages frontend environment variable.
 
@@ -97,13 +97,15 @@ npm run puzzles:publish
 npm run puzzles:publish -- --timeout-seconds 300
 ```
 
-Publishing validates settings, builds the full puzzle bank (reusing cached analysis), then uploads one `puzzles.json` object. Invalid, unsolvable, or incomplete puzzles abort publishing. Upload errors are reported in the terminal. No versions, backup objects, rollback tools, or server-side code are added.
+Publishing validates settings, analyzes all source puzzles (reusing cached analysis), uploads every `boards/<id>.json`, then uploads `index.json` **last**. Invalid, unsolvable, or incomplete puzzles abort publishing. A board upload failure prevents the index upload, and errors are reported in the terminal.
+
+Board URLs are fixed and overwritten in place: publication is not atomic across files. During an update, an older index or an already open page can read newly overwritten boards; a failed upload can leave some boards replaced. There are no versions, rollback tools, transactions, or server-side code. Remote old objects are not deleted, but the new index does not reference them.
 
 All puzzle data is publicly readable, including future boards. Only the production archive UI hides future puzzles.
 
 ## Website deployment
 
-Set **only** `VITE_PUZZLES_URL` in your Cloudflare Pages build environment to the full public object URL, for example `https://puzzles.example.com/puzzles.json`.
+Set **only** `VITE_PUZZLES_URL` in your Cloudflare Pages build environment to the full public object URL, for example `https://puzzles.example.com/index.json`.
 
 ```bash
 npm run build
@@ -111,7 +113,9 @@ npm run build
 
 Use `npm run build` and output directory `dist` in Cloudflare Pages. No Functions or R2 binding are needed. `npm run preview` previews the production build and reads the same remote URL.
 
-The website build does not calculate or embed puzzles. It fetches and validates the remote JSON before mounting the existing game. There is **no bundled puzzle bank, fallback data, loading/error UI, automatic retry, or saved-game migration**. A failed request is recorded in the console and the game does not start. If today's puzzle is absent, the latest released puzzle is selected with its actual date; puzzles do not loop.
+The website build does not calculate or embed puzzles. Before mounting the existing game, it fetches and validates the index, selects the current daily puzzle, and downloads only that board. Board addresses are resolved relative to the index URL. Historical boards are downloaded on selection, not when opening the archive. Large boards therefore do not increase startup downloads unless selected as the daily puzzle.
+
+There is **no bundled puzzle bank, fallback data, loading/error UI, automatic retry, or saved-game migration**. A failed startup request is recorded in the console and the game does not start. A failed archive selection keeps the current game and archive unchanged; selecting the entry again makes a new request. When selections overlap, only the latest selection is applied. If today's puzzle is absent, the latest released puzzle is selected with its actual date; puzzles do not loop.
 
 Deploy the website once after configuring the public URL. Subsequent puzzle updates need only `npm run puzzles:publish`, not Git commits or a Pages deployment. Website code changes still require a normal deployment.
 

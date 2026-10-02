@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { buildBoard } from '../src/engine/core';
 import { solvePuzzle } from '../src/engine/solver';
 import { rateDifficulty, ANALYSIS_VERSION } from '../src/engine/difficulty';
-import type { PuzzleDefinition, PuzzleInput } from '../src/engine/types';
+import type { PuzzleDefinition, PuzzleIndexEntry, PuzzleInput } from '../src/engine/types';
 
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const GENERATED = resolve(ROOT, 'puzzles/generated');
@@ -63,7 +63,7 @@ async function readCached(path: string): Promise<Solved | undefined> {
   }
 }
 
-export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleDefinition[]> {
+export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleIndexEntry[]> {
   const files = (await readdir(SOURCE)).filter(file => file.endsWith('.json')).sort();
   if (!files.length) throw new Error('No puzzle JSON files in puzzles/source');
   const puzzles: PuzzleDefinition[] = [];
@@ -103,11 +103,18 @@ export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleDe
     console.log(`  ${result.optimalMoves} moves, ${result.minExtinguishesAtOptimal} extinguishes, score ${rating.score}: ${rating.difficulty}`);
   }
 
-  // Publishable output is replaced only after every source puzzle is fully analyzed.
+  // Replace local output only after every source puzzle is fully analyzed.
+  await rm(GENERATED, { recursive: true, force: true });
+  const index: PuzzleIndexEntry[] = [];
+  for (const { rows, seed, ...metadata } of puzzles) {
+    const file = `boards/${metadata.id}.json`;
+    await writeJson(resolve(GENERATED, file), { rows, seed });
+    index.push({ ...metadata, file });
+  }
   await writeJson(resolve(GENERATED, 'analysis.json'), { version: ANALYSIS_VERSION, puzzles: report });
-  await writeJson(resolve(GENERATED, 'puzzles.json'), puzzles);
-  console.log(`Generated ${puzzles.length} puzzles in puzzles/generated/puzzles.json`);
-  return puzzles;
+  await writeJson(resolve(GENERATED, 'index.json'), index);
+  console.log(`Generated index.json and ${index.length} boards in puzzles/generated`);
+  return index;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -31,26 +31,31 @@ async function publishPuzzles(): Promise<void> {
 
   stage = 'puzzle generation';
   console.log('[publish] Building puzzles...');
-  await buildPuzzles(options);
+  const index = await buildPuzzles(options);
 
-  stage = 'reading generated puzzles';
-  const body = await readFile(resolve(GENERATED, 'puzzles.json'));
-
-  stage = 'R2 upload';
-  console.log('[publish] Uploading puzzles.json to R2...');
   const client = new S3Client({
     region: 'auto',
     endpoint,
     credentials: { accessKeyId, secretAccessKey },
   });
-  await client.send(new PutObjectCommand({
-    Bucket: bucket,
-    Key: 'puzzles.json',
-    Body: body,
-    ContentType: 'application/json',
-    CacheControl: 'no-cache,max-age=0,must-revalidate',
-  }));
-  console.log('[publish] Successfully published puzzles.json.');
+  try {
+    // Fixed board URLs are overwritten first; publish the index only if every upload succeeds.
+    for (const key of [...index.map(puzzle => puzzle.file), 'index.json']) {
+      stage = `uploading ${key}`;
+      console.log(`[publish] Uploading ${key} to R2...`);
+      const body = await readFile(resolve(GENERATED, key));
+      await client.send(new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: body,
+        ContentType: 'application/json',
+        CacheControl: 'no-cache,max-age=0,must-revalidate',
+      }));
+    }
+  } finally {
+    client.destroy();
+  }
+  console.log(`[publish] Successfully published ${index.length} boards and index.json.`);
 }
 
 publishPuzzles().catch(error => {
