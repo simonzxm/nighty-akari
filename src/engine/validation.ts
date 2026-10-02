@@ -19,7 +19,7 @@ export function validatePuzzleInput(value: unknown): asserts value is PuzzleInpu
     if (typeof row !== 'string' || row.length !== width) {
       throw new TypeError(`Puzzle row ${r + 1} must have width ${width}`);
     }
-    if (!/^[.#0-9]+$/.test(row)) {
+    if (/[^.#0-9]/.test(row)) {
       throw new TypeError(`Puzzle row ${r + 1} contains an invalid cell (allowed: . # 0-9)`);
     }
   }

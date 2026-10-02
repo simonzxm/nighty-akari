@@ -136,7 +136,7 @@ function bitCount(mask: bigint): number {
 }
 
 function solveIda(model: BoardModel, maxStates: number, expired: () => boolean): SolutionResult {
-  const maxCoverage = Math.max(1, ...model.rays.map((ray) => bitCount(ray.litMask)));
+  const maxCoverage = model.rays.reduce((max, ray) => Math.max(max, bitCount(ray.litMask)), 1);
   const targets = model.walls.map((wall) => wall.value === '#' ? -1 : Number(wall.value));
   // One placement illuminates <=maxCoverage cells and adds <=1 hit per wall.
   // Extinguishing cannot help either deficit: both bounds remain admissible.
@@ -198,14 +198,10 @@ function solveIda(model: BoardModel, maxStates: number, expired: () => boolean):
 
       // Complete the optimal threshold, pruning only branches that cannot improve
       // the proven depth/extinguish pair. Extinguishes never decrease on a suffix.
-      if (depth >= threshold || depth >= bestDepth ||
-          (bestPath !== undefined && frame.extinguishes >= bestExtinguishes)) {
-        // Without a goal, cutoff nodes still need successors examined to prove
-        // exhaustion or discover the next admissible threshold.
-        if (bestPath !== undefined) {
-          pop();
-          continue;
-        }
+      if (bestPath !== undefined &&
+          (depth >= bestDepth || frame.extinguishes >= bestExtinguishes)) {
+        pop();
+        continue;
       }
       let pushed = false;
       while (frame.nextCell < model.cells.length) {

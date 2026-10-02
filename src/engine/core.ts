@@ -172,11 +172,13 @@ export function transitionLight(
   // A single toggle only changes counts at the walls hit by this light.
   // Invalid externally supplied states use the full check to retain UI behavior.
   const badWall = inspection.valid
-    ? m.rays[i].hits.find((wallIndex) => {
+    ? m.rays[i].hits.reduce<number | undefined>((firstBad, wallIndex) => {
         const target = m.walls[wallIndex].value;
-        return target !== '#' &&
+        const overloaded = target !== '#' &&
           inspection.counts[wallIndex] + (isCurrentlyOn ? -1 : 1) > Number(target);
-      })
+        return overloaded && (firstBad === undefined || wallIndex < firstBad)
+          ? wallIndex : firstBad;
+      }, undefined)
     : inspectBoard(m, nextState).overloadedWalls[0];
   if (badWall !== undefined) {
     return { ok: false, reasonKey: 'wall_limit_exceeded', wallIndex: badWall };
