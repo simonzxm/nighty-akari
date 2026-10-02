@@ -1,50 +1,50 @@
 export interface PuzzleRecord {
-  puzzleId: string;
-  puzzleNumber: number;
-  completed: boolean;
   moves: number;
   timeSeconds: number;
-  completedAt: string;
 }
 
 export interface SavedGameState {
-  puzzleId: string;
-  stateHex: string; // BigInt serialized as hex
+  puzzleId: number;
+  stateHex: string;
   moves: number;
   startTime: number | null;
-  historyHex: string[]; // for undo
+  historyHex: string[];
 }
 
-const RECORDS_KEY = 'nighty_akari_records_v1';
-const CURRENT_GAME_KEY = 'nighty_akari_current_game_v1';
+const RECORDS_KEY = 'nighty_akari_records';
+const IN_PROGRESS_KEY = 'nighty_akari_in_progress';
 
-export function loadAllRecords(): Record<string, PuzzleRecord> {
+export function loadAllRecords(): Record<number, PuzzleRecord> {
   try {
     const raw = localStorage.getItem(RECORDS_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
 }
 
-export function savePuzzleRecord(record: PuzzleRecord): void {
+export function savePuzzleRecord(puzzleId: number, moves: number, timeSeconds: number): void {
   try {
     const records = loadAllRecords();
-    records[record.puzzleId] = record;
-    localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
+    const existing = records[puzzleId];
+
+    // Only update if no record yet, or if new moves are strictly less
+    // If moves are not fewer, do not update time or moves
+    if (!existing || moves < existing.moves) {
+      records[puzzleId] = { moves, timeSeconds };
+      localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
+    }
   } catch (err) {
     console.error('Failed to save puzzle record:', err);
   }
 }
 
-export function loadSavedGameState(puzzleId: string): SavedGameState | null {
+export function loadSavedGameState(puzzleId: number): SavedGameState | null {
   try {
-    const raw = localStorage.getItem(CURRENT_GAME_KEY);
+    const raw = localStorage.getItem(IN_PROGRESS_KEY);
     if (!raw) return null;
-    const data: SavedGameState = JSON.parse(raw);
-    if (data.puzzleId !== puzzleId) return null;
-    return data;
+    const states = JSON.parse(raw);
+    return states[puzzleId] || null;
   } catch {
     return null;
   }
@@ -52,17 +52,23 @@ export function loadSavedGameState(puzzleId: string): SavedGameState | null {
 
 export function saveGameState(state: SavedGameState): void {
   try {
-    localStorage.setItem(CURRENT_GAME_KEY, JSON.stringify(state));
+    const raw = localStorage.getItem(IN_PROGRESS_KEY);
+    const states = raw ? JSON.parse(raw) : {};
+    states[state.puzzleId] = state;
+    localStorage.setItem(IN_PROGRESS_KEY, JSON.stringify(states));
   } catch (err) {
     console.error('Failed to save game state:', err);
   }
 }
 
-export function clearSavedGameState(puzzleId: string): void {
+export function clearSavedGameState(puzzleId: number): void {
   try {
-    const current = loadSavedGameState(puzzleId);
-    if (current) {
-      localStorage.removeItem(CURRENT_GAME_KEY);
+    const raw = localStorage.getItem(IN_PROGRESS_KEY);
+    if (!raw) return;
+    const states = JSON.parse(raw);
+    if (states[puzzleId]) {
+      delete states[puzzleId];
+      localStorage.setItem(IN_PROGRESS_KEY, JSON.stringify(states));
     }
   } catch (err) {
     console.error('Failed to clear game state:', err);

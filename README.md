@@ -8,7 +8,7 @@ A minimalist daily light relay puzzle inspired by Daily Akari's clean, pitch-bla
 2. **Borrowing Light**: You can only place a new lamp on a square that is currently illuminated. Use existing light to relay into the darkness.
 3. **Block Limits & Targets**: The number on a dark block is the total count of light beams shining into it (from all lamps in its row and column). Beams hitting a block can **never** exceed this number at any point, and must exactly match it to win.
 4. **Extinguish & Scaffold**: Click any existing lamp to extinguish it, reclaiming beams and freeing block capacity. Place temporary lamps to reach distant areas, then extinguish them once new footholds are established.
-5. **Initial Seed Star**: The pure white star (✦) is permanent and cannot be extinguished.
+5. **Initial Seed Moon**: The celestial moon is permanent and cannot be extinguished.
 6. **Victory Condition**: Illuminate all white squares while ensuring all numbered blocks are satisfied simultaneously.
 
 ## Controls

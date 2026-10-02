@@ -1,5 +1,5 @@
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Moon } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { DAILY_PUZZLES } from '../data/puzzles';
 import { PuzzleDefinition } from '../engine/types';
@@ -9,9 +9,9 @@ import { formatGameDate, getTodayDateString } from '../utils/daily';
 interface ArchiveModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentPuzzleId: string;
+  currentPuzzleId: number;
   onSelectPuzzle: (puzzle: PuzzleDefinition) => void;
-  records: Record<string, PuzzleRecord>;
+  records: Record<number, PuzzleRecord>;
 }
 
 export const ArchiveModal: React.FC<ArchiveModalProps> = ({
@@ -27,12 +27,12 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
 
   const todayStr = getTodayDateString();
 
-  // Only released puzzles (on or before today, or already played), sorted descending (newest on top)
+  // Released puzzles on or before today, or already played, sorted descending (newest on top)
   const availablePuzzles = DAILY_PUZZLES.filter(
-    (p) => p.date <= todayStr || !!records[p.id]?.completed
-  ).sort((a, b) => b.number - a.number);
+    (p) => p.date <= todayStr || Boolean(records[p.id])
+  ).sort((a, b) => b.id - a.id);
 
-  const totalCompleted = availablePuzzles.filter((p) => records[p.id]?.completed).length;
+  const totalCompleted = availablePuzzles.filter((p) => Boolean(records[p.id])).length;
 
   const getDifficultyText = (diff: PuzzleDefinition['difficulty']) => {
     switch (diff) {
@@ -47,14 +47,20 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
     }
   };
 
+  const formatTime = (timeSec: number) => {
+    const mins = Math.floor(timeSec / 60);
+    const secs = timeSec % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
       <div className="w-full max-w-sm max-h-[80vh] bg-[#0f0f12] rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col text-zinc-200 relative">
-        {/* Clean Header: No divider border */}
+        {/* Header without dividers */}
         <div className="flex items-center justify-between pb-3">
           <div className="flex items-baseline gap-2">
-            <h2 className="text-base font-bold text-white flex items-center gap-1.5">
-              <span className="text-amber-300 text-sm">✦</span>
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <Moon className="w-4 h-4 text-amber-300 fill-amber-300/20 shrink-0" strokeWidth={1.75} />
               <span>{t.archiveTitle}</span>
             </h2>
             <span className="text-xs text-zinc-500 font-mono">
@@ -72,13 +78,15 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
           </button>
         </div>
 
-        {/* Minimalist List: No nested boxes, clean hover rows */}
-        <div className="flex-1 overflow-y-auto py-2 space-y-1 pr-1">
+        {/* Clean, balanced archive list without redundant left icons */}
+        <div className="flex-1 overflow-y-auto py-2 space-y-1.5 pr-1">
           {availablePuzzles.map((puzzle) => {
             const isCurrent = puzzle.id === currentPuzzleId;
             const record = records[puzzle.id];
-            const isSolved = !!record?.completed;
-            const isOptimal = isSolved && record.moves <= puzzle.optimalMoves;
+            const isSolved = Boolean(record);
+            const solveMoves = record?.moves ?? 0;
+            const solveTime = record?.timeSeconds ?? 0;
+            const isOptimal = isSolved && solveMoves <= puzzle.optimalMoves;
             const isToday = puzzle.date === todayStr;
 
             return (
@@ -89,63 +97,58 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
                   onSelectPuzzle(puzzle);
                   onClose();
                 }}
-                className={`w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer ${
+                className={`w-full px-3.5 py-3 rounded-2xl flex flex-col gap-1 text-left transition-all cursor-pointer select-none ${
                   isCurrent
-                    ? 'bg-white/10 text-white'
-                    : 'text-zinc-300 hover:bg-white/5'
+                    ? 'bg-white/10 ring-1 ring-white/15 text-white'
+                    : 'text-zinc-300 hover:bg-white/5 active:bg-white/10'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  {/* Clean glyph without square boxes */}
-                  <span
-                    className={`font-mono text-sm w-5 text-center shrink-0 ${
-                      isOptimal
-                        ? 'text-amber-400 font-bold'
-                        : isSolved
-                        ? 'text-emerald-400 font-bold'
-                        : isCurrent
-                        ? 'text-white font-bold'
-                        : 'text-zinc-600'
-                    }`}
-                  >
-                    {isOptimal ? '★' : isSolved ? '✓' : puzzle.number}
-                  </span>
-
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <span className="font-semibold text-white">
-                        {t.dailyNo(puzzle.number)}
+                {/* Row 1: Issue Title & Today on Left, Solved Moves / Status on Right */}
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-semibold text-white text-xs sm:text-[13px] truncate">
+                      {t.dailyNo(puzzle.id)}
+                    </span>
+                    {isToday && (
+                      <span className="text-[10px] text-amber-300 font-mono bg-amber-400/10 px-1.5 py-0.5 rounded-full shrink-0">
+                        {lang === 'zh' ? '今日' : 'Today'}
                       </span>
-                      <span className="text-zinc-600">·</span>
-                      <span className="text-zinc-400 font-mono">
-                        {formatGameDate(puzzle.date, lang)}
-                      </span>
-                      {isToday && (
-                        <span className="text-[10px] text-amber-300/80 font-mono">
-                          ({lang === 'zh' ? '今日' : 'Today'})
-                        </span>
-                      )}
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
-                      {getDifficultyText(puzzle.difficulty)}
-                    </div>
+                  <div className="shrink-0 text-right ml-2">
+                    {isSolved ? (
+                      <span
+                        className={`text-xs font-mono font-semibold ${
+                          isOptimal ? 'text-amber-400' : 'text-emerald-400'
+                        }`}
+                      >
+                        {isOptimal ? '★ ' : '✓ '}
+                        {solveMoves} {lang === 'zh' ? (isOptimal ? '步 (最优)' : '步') : 'moves'}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-zinc-500 font-mono">
+                        {t.archiveStatusUnsolved}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Right: Solved moves or dash */}
-                <div className="text-right">
-                  {isSolved ? (
-                    <span
-                      className={`text-xs font-mono font-medium ${
-                        isOptimal ? 'text-amber-400' : 'text-zinc-400'
-                      }`}
-                    >
-                      {record.moves} {lang === 'zh' ? '步' : 'moves'}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-zinc-700 font-mono">—</span>
-                  )}
+                {/* Row 2: Date & Difficulty on Left, Solved Time on Right */}
+                <div className="flex items-center justify-between w-full text-[11px] text-zinc-400 font-mono">
+                  <div className="truncate">
+                    <span>{formatGameDate(puzzle.date, lang)}</span>
+                    <span className="mx-1.5 text-zinc-600">·</span>
+                    <span className="text-zinc-400">{getDifficultyText(puzzle.difficulty)}</span>
+                  </div>
+
+                  <div className="shrink-0 text-right ml-2 text-zinc-400">
+                    {isSolved ? (
+                      <span>{formatTime(solveTime)}</span>
+                    ) : (
+                      <span className="text-zinc-600">—</span>
+                    )}
+                  </div>
                 </div>
               </button>
             );

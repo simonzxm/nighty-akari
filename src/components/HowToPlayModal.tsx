@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Sun, CornerDownRight, ShieldAlert, Sparkles, Flame } from 'lucide-react';
+import { X, Sun, CornerDownRight, ShieldAlert, Moon, Flame } from 'lucide-react';
 import { useI18n } from '../i18n';
 
 interface HowToPlayModalProps {
@@ -34,7 +34,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
       desc: t.rule4Desc,
     },
     {
-      icon: <Sparkles className="w-4 h-4 text-white shrink-0" />,
+      icon: <Moon className="w-4 h-4 text-amber-200 shrink-0 fill-amber-200/20" />,
       title: t.rule5Title,
       desc: t.rule5Desc,
     },
@@ -46,8 +46,8 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
         {/* Header without border line */}
         <div className="flex items-start justify-between pb-2">
           <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-1.5">
-              <span className="text-amber-300 text-sm">✦</span>
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <Moon className="w-4 h-4 text-amber-300 fill-amber-300/20 shrink-0" strokeWidth={1.75} />
               <span>{t.rulesTitle}</span>
             </h2>
             <p className="text-xs text-zinc-400 mt-1">

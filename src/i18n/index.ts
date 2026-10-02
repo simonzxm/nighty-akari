@@ -5,7 +5,7 @@ export type Language = 'en' | 'zh';
 export const translations = {
   en: {
     appTitle: 'Nighty Akari',
-    tagline: 'Light up the night.',
+    tagline: 'Light up the night with moonlight.',
     dailyNo: (no: number) => `No. ${no}`,
     archive: 'Archive',
     howToPlay: 'How to Play',
@@ -19,13 +19,15 @@ export const translations = {
     resume: 'Resume',
     playAgain: 'Play Again',
     optimalGoal: 'Optimal Moves',
+    inProgress: 'In Progress',
+    notStarted: 'Not Started',
     // Difficulty
     difficultyLabel: 'Difficulty',
     difficultyEasy: 'Easy',
     difficultyMedium: 'Medium',
     difficultyHard: 'Hard',
     // In game errors / notifications (subtle, non-intrusive)
-    errSeedPermanent: 'The initial star light (✦) cannot be extinguished.',
+    errSeedPermanent: 'The initial celestial moon cannot be extinguished.',
     errNotLit: 'You can only place a light on an illuminated square.',
     errWallLimit: (r: number, c: number, limit: string) =>
       `Exceeds limit on block (${r}, ${c}) [max ${limit}].`,
@@ -60,15 +62,15 @@ export const translations = {
     rule3Desc: 'The number on a dark block is the total count of light beams shining into it (from all lamps in its row and column). Beams hitting a block can never exceed its number at any point, and must exactly match it to win.',
     rule4Title: 'Extinguish & Scaffold',
     rule4Desc: 'Click an existing lamp to extinguish it, reclaiming beams and freeing block capacity. Place temporary lamps to reach distant areas, then extinguish them once new footholds are established.',
-    rule5Title: 'Permanent Seed Star',
-    rule5Desc: 'The pure white star (✦) is the starting light source. It remains permanently lit and cannot be extinguished.',
+    rule5Title: 'Permanent Celestial Moon',
+    rule5Desc: 'The pure white celestial moon is the starting light source. It remains permanently lit and cannot be extinguished.',
     // Settings / Lang
     language: 'Language',
     close: 'Close',
   },
   zh: {
     appTitle: 'Nighty Akari',
-    tagline: '点亮静谧之夜。',
+    tagline: '借一弯月色，点亮静谧之夜。',
     dailyNo: (no: number) => `第 ${no} 期`,
     archive: '往期题目',
     howToPlay: '玩法说明',
@@ -82,13 +84,15 @@ export const translations = {
     resume: '继续游戏',
     playAgain: '再玩一遍',
     optimalGoal: '理论最少步数',
+    inProgress: '挑战中',
+    notStarted: '未挑战',
     // Difficulty
     difficultyLabel: '难度',
     difficultyEasy: '简单',
     difficultyMedium: '中等',
     difficultyHard: '困难',
     // In game errors
-    errSeedPermanent: '初始星芒起始灯（✦）无法熄灭。',
+    errSeedPermanent: '初始月亮光源无法熄灭。',
     errNotLit: '只能在已被光线照亮的格子上放灯。',
     errWallLimit: (r: number, c: number, limit: string) =>
       `第 ${r} 行第 ${c} 列的黑块超限（上限 ${limit}）。`,
@@ -123,8 +127,8 @@ export const translations = {
     rule3Desc: '黑块上的数字代表直射到该黑块的光线总数（来自同行同列所有朝向它的灯）。任何时刻射入的光线都不能超过该数字；通关时必须恰好等于该数字。',
     rule4Title: '熄灯与拆桥',
     rule4Desc: '点击已放置的灯可以将其熄灭，撤回光线并释放黑块容量。可以先放临时灯把光引到远方，待远方点亮新灯后，再熄灭过渡灯。',
-    rule5Title: '初始永久星芒',
-    rule5Desc: '棋盘上的纯白星芒（✦）是关卡初始自带的起点光源，长亮且无法熄灭。',
+    rule5Title: '初始永久月亮',
+    rule5Desc: '棋盘上的纯白月亮是关卡初始自带的起点光源，长亮且无法熄灭。',
     // Settings / Lang
     language: '语言',
     close: '关闭',

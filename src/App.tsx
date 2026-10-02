@@ -62,7 +62,7 @@ const GameMain: React.FC = () => {
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
   // Solved records
-  const [records, setRecords] = useState<Record<string, PuzzleRecord>>(() => loadAllRecords());
+  const [records, setRecords] = useState<Record<number, PuzzleRecord>>(() => loadAllRecords());
 
   // Unified Level Info / Victory modal opens automatically on start
   const [isLevelInfoOpen, setIsLevelInfoOpen] = useState(true);
@@ -120,20 +120,11 @@ const GameMain: React.FC = () => {
       const finalTime = startTime ? Math.max(1, Math.floor((Date.now() - startTime) / 1000)) : 1;
       setElapsedSeconds(finalTime);
 
-      const record: PuzzleRecord = {
-        puzzleId: currentPuzzle.id,
-        puzzleNumber: currentPuzzle.number,
-        completed: true,
-        moves,
-        timeSeconds: finalTime,
-        completedAt: new Date().toISOString(),
-      };
-
-      savePuzzleRecord(record);
-      setRecords((prev) => ({ ...prev, [currentPuzzle.id]: record }));
+      savePuzzleRecord(currentPuzzle.id, moves, finalTime);
+      setRecords(loadAllRecords());
       setIsLevelInfoOpen(true);
     }
-  }, [inspection.won, currentPuzzle, moves, startTime]);
+  }, [inspection.won, currentPuzzle.id, moves, startTime]);
 
   // Save in-progress state to localStorage
   useEffect(() => {
@@ -232,7 +223,7 @@ const GameMain: React.FC = () => {
   }, [handleUndo, handleRestart]);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black text-zinc-100 flex flex-col items-center justify-center selection:bg-amber-400 selection:text-black">
+    <div className="relative w-screen h-screen overflow-hidden bg-[#060608] bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.035)_0%,rgba(0,0,0,0)_65%)] text-zinc-100 flex flex-col items-center justify-center selection:bg-amber-400 selection:text-black">
       {/* 4 Corner Icon Buttons with NO background */}
       {/* Top-Left: Level Info, Settlement & Archive */}
       <button
@@ -240,7 +231,7 @@ const GameMain: React.FC = () => {
         onClick={() => setIsLevelInfoOpen(true)}
         title={t.about}
         aria-label={t.about}
-        className="fixed top-3 left-3 sm:top-5 sm:left-5 z-20 p-2 text-zinc-500 hover:text-white transition-colors duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
+        className="fixed top-3 left-3 sm:top-5 sm:left-5 z-20 p-2 text-zinc-500 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
       >
         <Info className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
       </button>
@@ -251,7 +242,7 @@ const GameMain: React.FC = () => {
         onClick={() => setIsHowToPlayOpen(true)}
         title={t.howToPlay}
         aria-label={t.howToPlay}
-        className="fixed top-3 right-3 sm:top-5 sm:right-5 z-20 p-2 text-zinc-500 hover:text-white transition-colors duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
+        className="fixed top-3 right-3 sm:top-5 sm:right-5 z-20 p-2 text-zinc-500 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
       >
         <HelpCircle className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
       </button>
@@ -262,7 +253,7 @@ const GameMain: React.FC = () => {
         onClick={handleRestart}
         title={t.restart}
         aria-label={t.restart}
-        className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 p-2 text-zinc-500 hover:text-white transition-colors duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
+        className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 p-2 text-zinc-500 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
       >
         <RotateCcw className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
       </button>
@@ -274,7 +265,7 @@ const GameMain: React.FC = () => {
         disabled={history.length === 0 || inspection.won}
         title={t.undo}
         aria-label={t.undo}
-        className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 p-2 text-zinc-500 hover:text-white transition-colors duration-150 disabled:opacity-20 disabled:hover:text-zinc-500 disabled:cursor-not-allowed cursor-pointer bg-transparent border-0 outline-none select-none"
+        className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 p-2 text-zinc-500 hover:text-white active:scale-90 transition-all duration-150 disabled:opacity-20 disabled:hover:text-zinc-500 disabled:cursor-not-allowed cursor-pointer bg-transparent border-0 outline-none select-none"
       >
         <Undo2 className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
       </button>
