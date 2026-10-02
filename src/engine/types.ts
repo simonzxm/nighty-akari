@@ -6,7 +6,7 @@ export type CellCoord = {
 export type WallData = {
   r: number;
   c: number;
-  value: '#' | '0' | '1' | '2' | '3' | '4';
+  value: '#' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
 };
 
 export type RayData = {
@@ -16,11 +16,14 @@ export type RayData = {
   hits: number[];
 };
 
-export type PuzzleDefinition = {
+export type PuzzleInput = {
+  rows: string[];
+  seed: [number, number]; // [row, col], 1-indexed
+};
+
+export type PuzzleDefinition = PuzzleInput & {
   id: number;
   date: string; // YYYY-MM-DD
-  rows: string[];
-  seed: [number, number]; // [row, col], 1-indexed for easy reading in JSON
   optimalMoves: number;
   difficulty: 'easy' | 'medium' | 'hard';
 };
@@ -48,11 +51,10 @@ export type BoardInspection = {
   overloadedWalls: number[]; // indices of walls that exceed target
 };
 
-export type ActionResult =
+export type LightTransitionResult =
   | {
       ok: true;
       state: bigint;
-      inspection: BoardInspection;
       toggledCell: number;
       actionType: 'place' | 'extinguish';
     }
@@ -61,3 +63,7 @@ export type ActionResult =
       reasonKey: 'out_of_bounds' | 'seed_permanent' | 'not_illuminated' | 'wall_limit_exceeded';
       wallIndex?: number;
     };
+
+export type ActionResult =
+  | (Extract<LightTransitionResult, { ok: true }> & { inspection: BoardInspection })
+  | Extract<LightTransitionResult, { ok: false }>;

@@ -1,70 +1,237 @@
-import { BoardModel } from './types';
-import { inspectBoard } from './core';
+import type { BoardInspection, BoardModel } from './types';
+import { inspectBoard, transitionLight } from './core';
 
-export type SolutionResult = {
-  path: number[];
-  optimalMoves: number;
-  visitedStates: number;
-} | null;
+export type SolveOptions = {
+  algorithm?: 'bfs' | 'ida';
+  /** BFS: unique discovered states. IDA*: cumulative state visits across iterations. */
+  maxStates?: number;
+  /** Zero or omitted means no time limit. */
+  timeoutMs?: number;
+};
+
+export type SolutionResult =
+  | {
+      status: 'solved';
+      path: number[];
+      optimalMoves: number;
+      minExtinguishesAtOptimal: number;
+      visitedStates: number;
+    }
+  | { status: 'unsolvable' | 'incomplete'; visitedStates: number };
+
+type SearchNode = {
+  depth: number;
+  extinguishes: number;
+  parent: bigint | null;
+  cell: number;
+};
 
 /**
- * Breadth-First Search solver to find the optimal (minimum move) solution from a given state.
+ * Finds the shortest legal solution, then minimizes extinguishes at that depth.
+ * Defaults to BFS at <=20 white cells, otherwise low-memory IDA*.
+ * Budgets are unlimited when omitted or zero; a partial optimum is never returned.
  */
-export function solvePuzzle(m: BoardModel, startState = m.initialState): SolutionResult {
-  const queue: bigint[] = [startState];
-  const visited = new Set<bigint>([startState]);
-  const parentMap = new Map<bigint, { prevState: bigint; cellIndex: number }>();
-
-  let head = 0;
-
-  while (head < queue.length) {
-    const currentState = queue[head++];
-    const inspection = inspectBoard(m, currentState);
-
-    if (inspection.won) {
-      // Reconstruct path
-      const path: number[] = [];
-      let cur = currentState;
-      while (parentMap.has(cur)) {
-        const step = parentMap.get(cur)!;
-        path.push(step.cellIndex);
-        cur = step.prevState;
-      }
-      path.reverse();
-      return {
-        path,
-        optimalMoves: path.length,
-        visitedStates: visited.size,
-      };
-    }
-
-    // Explore neighbors
-    for (let i = 0; i < m.cells.length; i++) {
-      if (i === m.seedIndex) continue; // seed cannot be changed
-
-      const bit = 1n << BigInt(i);
-      const isOn = (currentState & bit) !== 0n;
-
-      // To place a light, cell must be lit
-      if (!isOn && (inspection.litMask & bit) === 0n) {
-        continue;
-      }
-
-      const nextState = currentState ^ bit;
-      if (visited.has(nextState)) {
-        continue;
-      }
-
-      const nextInspection = inspectBoard(m, nextState);
-      if (!nextInspection.valid) {
-        continue;
-      }
-
-      visited.add(nextState);
-      parentMap.set(nextState, { prevState: currentState, cellIndex: i });
-      queue.push(nextState);
+export function solvePuzzle(model: BoardModel, options: SolveOptions = {}): SolutionResult {
+  const algorithm = options.algorithm ?? (model.cells.length <= 20 ? 'bfs' : 'ida');
+  if (algorithm !== 'bfs' && algorithm !== 'ida') {
+    throw new TypeError('Unknown solver algorithm');
+  }
+  for (const [name, value] of Object.entries({ maxStates: options.maxStates, timeoutMs: options.timeoutMs })) {
+    if (value !== undefined && (!Number.isFinite(value) || value < 0 ||
+        (name === 'maxStates' && !Number.isInteger(value)))) {
+      throw new RangeError(`${name} must be a nonnegative ${name === 'maxStates' ? 'integer' : 'number'}`);
     }
   }
+  const maxStates = options.maxStates || Infinity;
+  const deadline = options.timeoutMs ? performance.now() + options.timeoutMs : Infinity;
+  const expired = () => performance.now() >= deadline;
+  const initialInspection = inspectBoard(model, model.initialState);
+  if (!initialInspection.valid) {
+    throw new Error('Cannot solve a board with an invalid initial state');
+  }
 
-  return null;
+  if (algorithm === 'bfs') {
+    return solveBfs(model, maxStates, expired);
+  }
+  return solveIda(model, maxStates, expired);
+}
+
+function solveBfs(model: BoardModel, maxStates: number, expired: () => boolean): SolutionResult {
+  const nodes = new Map<bigint, SearchNode>([
+    [model.initialState, { depth: 0, extinguishes: 0, parent: null, cell: -1 }],
+  ]);
+  let layer = [model.initialState];
+  let depth = 0;
+  const incomplete = (): SolutionResult => ({ status: 'incomplete', visitedStates: nodes.size });
+
+  // Collection capacity failures are incomplete searches, never proofs of no solution.
+  try {
+    while (layer.length > 0) {
+      let winner: bigint | undefined;
+      let winnerExtinguishes = Infinity;
+      // Every parent in the preceding layer has finished updating this layer.
+      for (const state of layer) {
+        if (expired()) return incomplete();
+        const node = nodes.get(state)!;
+        if (node.extinguishes < winnerExtinguishes && inspectBoard(model, state).won) {
+          winner = state;
+          winnerExtinguishes = node.extinguishes;
+        }
+      }
+      if (winner !== undefined) {
+        const path: number[] = [];
+        let state = winner;
+        while (state !== model.initialState) {
+          const node = nodes.get(state)!;
+          path.push(node.cell);
+          state = node.parent!;
+        }
+        path.reverse();
+        return {
+          status: 'solved', path, optimalMoves: depth,
+          minExtinguishesAtOptimal: winnerExtinguishes, visitedStates: nodes.size,
+        };
+      }
+
+      const nextLayer: bigint[] = [];
+      for (const state of layer) {
+        if (expired()) return incomplete();
+        const inspection = inspectBoard(model, state);
+        const node = nodes.get(state)!;
+        for (let cell = 0; cell < model.cells.length; cell++) {
+          const move = transitionLight(model, state, cell, inspection);
+          if (!move.ok) continue;
+          const extinguishes = node.extinguishes + (move.actionType === 'extinguish' ? 1 : 0);
+          const existing = nodes.get(move.state);
+          if (existing) {
+            if (existing.depth === depth + 1 && extinguishes < existing.extinguishes) {
+              existing.extinguishes = extinguishes;
+              existing.parent = state;
+              existing.cell = cell;
+            }
+            continue;
+          }
+          if (nodes.size >= maxStates || expired()) return incomplete();
+          nodes.set(move.state, { depth: depth + 1, extinguishes, parent: state, cell });
+          nextLayer.push(move.state);
+        }
+      }
+      layer = nextLayer;
+      depth++;
+    }
+  } catch (error) {
+    if (!(error instanceof RangeError)) throw error;
+    return incomplete();
+  }
+  return { status: 'unsolvable', visitedStates: nodes.size };
+}
+
+function bitCount(mask: bigint): number {
+  let count = 0;
+  while (mask !== 0n) {
+    mask &= mask - 1n;
+    count++;
+  }
+  return count;
+}
+
+function solveIda(model: BoardModel, maxStates: number, expired: () => boolean): SolutionResult {
+  const maxCoverage = Math.max(1, ...model.rays.map((ray) => bitCount(ray.litMask)));
+  const targets = model.walls.map((wall) => wall.value === '#' ? -1 : Number(wall.value));
+  // One placement illuminates <=maxCoverage cells and adds <=1 hit per wall.
+  // Extinguishing cannot help either deficit: both bounds remain admissible.
+  const heuristic = (inspection: BoardInspection): number => {
+    let bound = Math.ceil(bitCount(model.fullLitMask & ~inspection.litMask) / maxCoverage);
+    for (let wall = 0; wall < targets.length; wall++) {
+      bound = Math.max(bound, targets[wall] - inspection.counts[wall]);
+    }
+    return bound;
+  };
+
+  // Explicit DFS frames avoid the JavaScript recursion limit on arbitrary boards.
+  type Frame = {
+    state: bigint;
+    extinguishes: number;
+    inspection?: BoardInspection;
+    nextCell: number;
+  };
+  let visitedStates = 0;
+  let threshold = heuristic(inspectBoard(model, model.initialState));
+
+  while (true) {
+    const path: number[] = [];
+    const ancestors = new Set<bigint>([model.initialState]);
+    const stack: Frame[] = [{ state: model.initialState, extinguishes: 0, nextCell: 0 }];
+    let nextThreshold = Infinity;
+    let bestPath: number[] | undefined;
+    let bestExtinguishes = Infinity;
+    let bestDepth = Infinity;
+    const pop = () => {
+      ancestors.delete(stack.pop()!.state);
+      if (path.length > 0) path.pop();
+    };
+
+    while (stack.length > 0) {
+      if (expired()) return { status: 'incomplete', visitedStates };
+      const frame = stack[stack.length - 1];
+      const depth = path.length;
+      if (!frame.inspection) {
+        if (visitedStates >= maxStates) return { status: 'incomplete', visitedStates };
+        visitedStates++;
+        frame.inspection = inspectBoard(model, frame.state);
+        const estimate = depth + heuristic(frame.inspection);
+        if (estimate > threshold) {
+          nextThreshold = Math.min(nextThreshold, estimate);
+          pop();
+          continue;
+        }
+        if (frame.inspection.won) {
+          if (depth < bestDepth || (depth === bestDepth && frame.extinguishes < bestExtinguishes)) {
+            bestPath = [...path];
+            bestDepth = depth;
+            bestExtinguishes = frame.extinguishes;
+          }
+          pop();
+          continue;
+        }
+      }
+
+      // Complete the optimal threshold, pruning only branches that cannot improve
+      // the proven depth/extinguish pair. Extinguishes never decrease on a suffix.
+      if (depth >= threshold || depth >= bestDepth ||
+          (bestPath !== undefined && frame.extinguishes >= bestExtinguishes)) {
+        // Without a goal, cutoff nodes still need successors examined to prove
+        // exhaustion or discover the next admissible threshold.
+        if (bestPath !== undefined) {
+          pop();
+          continue;
+        }
+      }
+      let pushed = false;
+      while (frame.nextCell < model.cells.length) {
+        const cell = frame.nextCell++;
+        const move = transitionLight(model, frame.state, cell, frame.inspection);
+        if (!move.ok || ancestors.has(move.state)) continue;
+        path.push(cell);
+        ancestors.add(move.state);
+        stack.push({
+          state: move.state,
+          extinguishes: frame.extinguishes + (move.actionType === 'extinguish' ? 1 : 0),
+          nextCell: 0,
+        });
+        pushed = true;
+        break;
+      }
+      if (!pushed) pop();
+    }
+
+    if (bestPath !== undefined) {
+      return {
+        status: 'solved', path: bestPath, optimalMoves: bestDepth,
+        minExtinguishesAtOptimal: bestExtinguishes, visitedStates,
+      };
+    }
+    if (nextThreshold === Infinity) return { status: 'unsolvable', visitedStates };
+    threshold = nextThreshold;
+  }
 }

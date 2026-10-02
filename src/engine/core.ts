@@ -3,15 +3,19 @@ import {
   BoardInspection,
   BoardModel,
   CellCoord,
-  PuzzleDefinition,
+  LightTransitionResult,
+  PuzzleInput,
   RayData,
   WallData,
 } from './types';
 
-/**
- * Builds the board model from a puzzle definition.
- */
-export function buildBoard(puzzle: PuzzleDefinition): BoardModel {
+import { validatePuzzleInput } from './validation';
+
+export { validatePuzzleInput } from './validation';
+
+/** Builds the board model without requiring generated puzzle metadata. */
+export function buildBoard(puzzle: PuzzleInput & { id: number }): BoardModel {
+  validatePuzzleInput(puzzle);
   const rows = puzzle.rows;
   const h = rows.length;
   const w = rows[0].length;
@@ -75,7 +79,7 @@ export function buildBoard(puzzle: PuzzleDefinition): BoardModel {
   const initialState = 1n << BigInt(seedIndex);
   const fullLitMask = (1n << BigInt(cells.length)) - 1n;
 
-  return {
+  const model: BoardModel = {
     id: puzzle.id,
     rows,
     h,
@@ -89,6 +93,10 @@ export function buildBoard(puzzle: PuzzleDefinition): BoardModel {
     initialState,
     fullLitMask,
   };
+  if (!inspectBoard(model, initialState).valid) {
+    throw new Error('Initial seed exceeds a numbered wall target');
+  }
+  return model;
 }
 
 /**
@@ -137,45 +145,55 @@ export function inspectBoard(m: BoardModel, state: bigint): BoardInspection {
 }
 
 /**
- * Attempts to place or extinguish a light at cell index `i`.
+ * Shared legal transition for UI actions and offline search. Passing an inspection
+ * avoids recalculating the current state for every candidate move.
  */
-export function tryToggleLight(m: BoardModel, state: bigint, i: number): ActionResult {
-  if (i < 0 || i >= m.cells.length) {
+export function transitionLight(
+  m: BoardModel,
+  state: bigint,
+  i: number,
+  currentInspection?: BoardInspection,
+): LightTransitionResult {
+  if (!Number.isInteger(i) || i < 0 || i >= m.cells.length) {
     return { ok: false, reasonKey: 'out_of_bounds' };
   }
-
-  // Seed light is permanent
   if (i === m.seedIndex) {
     return { ok: false, reasonKey: 'seed_permanent' };
   }
 
   const bit = 1n << BigInt(i);
   const isCurrentlyOn = (state & bit) !== 0n;
-  const currentInspection = inspectBoard(m, state);
-
-  // If placing: cell must be currently illuminated
-  if (!isCurrentlyOn && (currentInspection.litMask & bit) === 0n) {
+  const inspection = currentInspection ?? inspectBoard(m, state);
+  if (!isCurrentlyOn && (inspection.litMask & bit) === 0n) {
     return { ok: false, reasonKey: 'not_illuminated' };
   }
 
   const nextState = state ^ bit;
-  const nextInspection = inspectBoard(m, nextState);
-
-  // If placing: must not exceed any wall capacity
-  if (!nextInspection.valid) {
-    const firstBadWall = nextInspection.overloadedWalls[0];
-    return {
-      ok: false,
-      reasonKey: 'wall_limit_exceeded',
-      wallIndex: firstBadWall,
-    };
+  // A single toggle only changes counts at the walls hit by this light.
+  // Invalid externally supplied states use the full check to retain UI behavior.
+  const badWall = inspection.valid
+    ? m.rays[i].hits.find((wallIndex) => {
+        const target = m.walls[wallIndex].value;
+        return target !== '#' &&
+          inspection.counts[wallIndex] + (isCurrentlyOn ? -1 : 1) > Number(target);
+      })
+    : inspectBoard(m, nextState).overloadedWalls[0];
+  if (badWall !== undefined) {
+    return { ok: false, reasonKey: 'wall_limit_exceeded', wallIndex: badWall };
   }
 
   return {
     ok: true,
     state: nextState,
-    inspection: nextInspection,
     toggledCell: i,
     actionType: isCurrentlyOn ? 'extinguish' : 'place',
   };
+}
+
+/** Attempts to place or extinguish a light, returning the resulting inspection. */
+export function tryToggleLight(m: BoardModel, state: bigint, i: number): ActionResult {
+  const result = transitionLight(m, state, i);
+  return result.ok
+    ? { ...result, inspection: inspectBoard(m, result.state) }
+    : result;
 }
