@@ -38,7 +38,7 @@ Each file in `puzzles/source/` contains only a board and its permanent moon posi
 - IDs are generated as 1, 2, 3, …; dates are consecutive calendar days starting on `2026-10-01`, configured in `scripts/build-puzzles.ts`.
 - There is no manual index or schedule. Inserting, deleting, or renaming files can renumber later puzzles. Existing browser records are not migrated or cleared.
 
-`npm run puzzles:build` writes a lightweight `puzzles/generated/index.json`, individual `boards/<id>.json` files containing only `rows` and `seed`, and a local `analysis.json` report. The index contains only `id`, `date`, `difficulty`, `optimalMoves`, and a relative `file` address. All source puzzles must be successfully analyzed before the generated directory is replaced; stale local outputs are removed. Successful calculations are cached in `.puzzle-cache/` by board contents and analysis version. Generated files and cache are ignored by Git. Keep your source files backed up yourself; publishing uploads only the index and board files.
+`npm run puzzles:build` writes a lightweight `puzzles/generated/index.json`, individual `boards/<id>.json` files containing only `rows` and `seed`, and a local `analysis.json` report. The index contains only `id`, `date`, `difficulty`, `optimalMoves`, and a relative `file` address. All source puzzles must be successfully analyzed before the generated directory is replaced; stale local outputs are removed. Successful calculations are cached in `.puzzle-cache/` by board contents and analysis version. The entire `puzzles/` directory (including sources and generated files) and `.puzzle-cache/` are ignored by Git. Source boards are local data, not versioned with the website code. Back up `puzzles/source/` separately; cloning this repository does not restore it. Publishing uploads only the index and board files.
 
 Local development fetches the generated index and current board, and shows **all** puzzles in the existing archive, including future dates. Opening the archive does not download boards; selecting a puzzle downloads only that board. Successfully loaded boards and pending requests are reused within the current page session. Rebuild the puzzle data and refresh after editing sources. No editor or additional UI is provided.
 
@@ -60,12 +60,12 @@ score = optimalMoves
       + 2 × minimumExtinguishesAmongShortestSolutions
       + max(0, ceil(whiteCells / 10) - 2)
 
-easy:   score ≤ 13
-medium: score ≤ 20
-hard:   score > 20
+easy:   score < 15
+medium: 15 ≤ score < 30
+hard:   score ≥ 30
 ```
 
-This is calibrated to the first three authored boards (easy, easy, low medium), not to measured player performance. The formula and analysis version live in `src/engine/difficulty.ts`; detailed metrics and a representative shortest path are in the local analysis report, not the published game JSON.
+The score formula is unchanged; the authored cutoffs are 15 for medium and 30 for hard. These thresholds are not calibrated to measured player performance. The first three boards score 9, 13, and 15, so they remain easy, easy, and medium. The formula and analysis version live in `src/engine/difficulty.ts`; detailed metrics and a representative shortest path are in the local analysis report, not the published game JSON.
 
 ## Public R2 setup
 
