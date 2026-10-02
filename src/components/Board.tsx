@@ -35,7 +35,6 @@ export const Board: React.FC<BoardProps> = ({
         const wall = model.walls[wIdx];
         if (wall.value !== '#') {
           const target = Number(wall.value);
-          // If placing, count would increase by 1
           if (!isBulb && inspection.counts[wIdx] + 1 > target) {
             previewViolatedWalls.add(wIdx);
           }
@@ -47,7 +46,7 @@ export const Board: React.FC<BoardProps> = ({
   return (
     <div className="flex flex-col items-center justify-center w-full px-4 py-6">
       <div
-        className="grid gap-[2px] w-full max-w-[420px] aspect-square bg-[#18181b] p-[2px] rounded-2xl overflow-hidden border border-zinc-800/80 shadow-2xl shadow-black/80 transition-all duration-300"
+        className="grid gap-[1.5px] w-full max-w-[390px] aspect-square bg-[#26262c] p-[1.5px] rounded-xl overflow-hidden shadow-2xl transition-all duration-300"
         style={{
           gridTemplateColumns: `repeat(${model.w}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${model.h}, minmax(0, 1fr))`,
@@ -94,7 +93,6 @@ export const Board: React.FC<BoardProps> = ({
                   wall={wall}
                   wallIndex={wallIdx}
                   currentCount={inspection.counts[wallIdx] || 0}
-                  isAffectedByPreview={previewAffectedWalls.has(wallIdx)}
                   previewViolated={previewViolatedWalls.has(wallIdx)}
                 />
               );

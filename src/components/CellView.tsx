@@ -21,7 +21,6 @@ interface WallCellProps {
   wall: WallData;
   wallIndex: number;
   currentCount: number;
-  isAffectedByPreview: boolean;
   previewViolated: boolean;
 }
 
@@ -38,11 +37,6 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
   onMouseEnter,
   onMouseLeave,
 }) => {
-  // Cursor logic:
-  // - seed: not-allowed (cannot extinguish)
-  // - has non-seed bulb: pointer (click to extinguish)
-  // - unlit: not-allowed (cannot place without light)
-  // - lit and empty: pointer (click to place)
   let cursorClass = 'cursor-pointer';
   if (isSeed) {
     cursorClass = 'cursor-not-allowed';
@@ -50,24 +44,17 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
     cursorClass = 'cursor-not-allowed';
   }
 
-  // Visual background:
-  // When lit: glowing bright warm light (#fef08a)
-  // When unlit: deep dark tile (#18181b)
-  let bgClass = 'bg-[#18181b] border-[#27272a]';
+  // Pure colors without borders
+  let bgClass = 'bg-[#18181c]';
   if (isLit) {
-    bgClass = 'bg-[#fff59d] text-zinc-900 border-[#fde047]/60 shadow-[0_0_12px_rgba(253,224,71,0.15)]';
+    bgClass = 'bg-[#fef08a]';
   }
 
-  // Hover or preview ray overlay
-  let overlayClass = '';
+  // Subtle preview illumination without harsh border rings
   if (isInPreviewRay && !isLit) {
-    overlayClass = 'bg-amber-400/25 ring-1 ring-inset ring-amber-400/50';
+    bgClass = 'bg-[#27272e]';
   } else if (isInPreviewRay && isLit) {
-    overlayClass = 'bg-amber-200/40 ring-1 ring-inset ring-amber-400/70';
-  }
-
-  if (isHovered && canPlace) {
-    overlayClass += ' ring-2 ring-inset ring-amber-400';
+    bgClass = 'bg-[#fff59d]';
   }
 
   return (
@@ -88,19 +75,19 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
       onMouseLeave={onMouseLeave}
       onFocus={onMouseEnter}
       onBlur={onMouseLeave}
-      className={`relative aspect-square border transition-colors duration-150 flex items-center justify-center select-none outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:z-10 ${cursorClass} ${bgClass} ${overlayClass}`}
+      className={`relative aspect-square transition-colors duration-100 flex items-center justify-center select-none outline-none ${cursorClass} ${bgClass}`}
     >
-      {/* Light Bulb Rendering */}
+      {/* Light Bulb */}
       {hasBulb && (
         <BulbIcon
           isSeed={isSeed}
-          className="transition-transform duration-150 transform hover:scale-110 active:scale-95"
+          className="transition-transform duration-100 transform hover:scale-105 active:scale-95"
         />
       )}
 
-      {/* Subtle indicator when empty cell is hovered and ready to place */}
-      {!hasBulb && isLit && isHovered && (
-        <div className="w-2.5 h-2.5 rounded-full bg-amber-500/50 animate-pulse pointer-events-none" />
+      {/* Subtle indicator when empty lit cell is hovered */}
+      {!hasBulb && isLit && isHovered && canPlace && (
+        <div className="w-2.5 h-2.5 rounded-full bg-amber-500/40 pointer-events-none" />
       )}
     </button>
   );
@@ -109,7 +96,6 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
 export const WallCell: React.FC<WallCellProps> = ({
   wall,
   currentCount,
-  isAffectedByPreview,
   previewViolated,
 }) => {
   const isNumbered = wall.value !== '#';
@@ -117,19 +103,14 @@ export const WallCell: React.FC<WallCellProps> = ({
   const isSatisfied = isNumbered && currentCount === target;
   const isViolated = isNumbered && currentCount > target;
 
-  let borderStyle = 'border-[#27272a]';
-  let textStyle = 'text-zinc-400';
-  let bgStyle = 'bg-[#09090b]';
+  let textStyle = 'text-white';
+  let bgStyle = 'bg-black';
 
   if (isSatisfied) {
-    textStyle = 'text-amber-400 font-bold drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]';
-    borderStyle = 'border-amber-500/40';
+    textStyle = 'text-zinc-500';
   } else if (isViolated || previewViolated) {
-    textStyle = 'text-rose-400 font-bold';
-    borderStyle = 'border-rose-500 ring-1 ring-rose-500';
-    bgStyle = 'bg-rose-950/30';
-  } else if (isAffectedByPreview) {
-    borderStyle = 'border-amber-400/70 ring-1 ring-amber-400/50';
+    textStyle = 'text-rose-400';
+    bgStyle = 'bg-rose-950/40';
   }
 
   return (
@@ -137,10 +118,10 @@ export const WallCell: React.FC<WallCellProps> = ({
       aria-label={`Wall at row ${wall.r + 1}, col ${wall.c + 1}${
         isNumbered ? `, target ${target}, current ${currentCount}` : ''
       }`}
-      className={`relative aspect-square border select-none flex items-center justify-center text-xl font-semibold tracking-wider transition-all duration-150 ${bgStyle} ${borderStyle} ${textStyle}`}
+      className={`relative aspect-square select-none flex items-center justify-center font-mono font-bold transition-colors duration-100 ${bgStyle} ${textStyle}`}
     >
       {isNumbered ? (
-        <span className="select-none text-2xl font-mono leading-none">
+        <span className="select-none text-xl sm:text-2xl leading-none">
           {wall.value}
         </span>
       ) : null}
