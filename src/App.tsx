@@ -17,6 +17,7 @@ import { Toast } from './components/Toast';
 import { LevelInfoModal } from './components/LevelInfoModal';
 import { ArchiveModal } from './components/ArchiveModal';
 import { HowToPlayModal } from './components/HowToPlayModal';
+import { ResetConfirmModal } from './components/ResetConfirmModal';
 
 const GameMain: React.FC = () => {
   const { t } = useI18n();
@@ -68,6 +69,7 @@ const GameMain: React.FC = () => {
   const [isLevelInfoOpen, setIsLevelInfoOpen] = useState(true);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Board inspection
@@ -91,6 +93,7 @@ const GameMain: React.FC = () => {
           }))
         );
         setIsArchiveOpen(false);
+        setIsResetConfirmOpen(false);
         setIsLevelInfoOpen(true);
         return;
       } catch {}
@@ -102,6 +105,7 @@ const GameMain: React.FC = () => {
     setHistory([]);
     setElapsedSeconds(0);
     setIsArchiveOpen(false);
+    setIsResetConfirmOpen(false);
     setIsLevelInfoOpen(true);
   }, []);
 
@@ -205,6 +209,7 @@ const GameMain: React.FC = () => {
         setIsLevelInfoOpen(false);
         setIsArchiveOpen(false);
         setIsHowToPlayOpen(false);
+        setIsResetConfirmOpen(false);
       } else if (e.key === 'i' || e.key === 'I') {
         setIsLevelInfoOpen((v) => !v);
       } else if (e.key === '?') {
@@ -213,14 +218,14 @@ const GameMain: React.FC = () => {
         handleUndo();
       } else if (e.key === 'r' || e.key === 'R') {
         if (!e.ctrlKey && !e.metaKey) {
-          handleRestart();
+          setIsResetConfirmOpen(true);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRestart]);
+  }, [handleUndo]);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[#060608] bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.035)_0%,rgba(0,0,0,0)_65%)] text-zinc-100 flex flex-col items-center justify-center selection:bg-amber-400 selection:text-black">
@@ -250,7 +255,7 @@ const GameMain: React.FC = () => {
       {/* Bottom-Left: Restart Level */}
       <button
         type="button"
-        onClick={handleRestart}
+        onClick={() => setIsResetConfirmOpen(true)}
         title={t.restart}
         aria-label={t.restart}
         className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 p-2 text-zinc-500 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
@@ -313,6 +318,13 @@ const GameMain: React.FC = () => {
       <HowToPlayModal
         isOpen={isHowToPlayOpen}
         onClose={() => setIsHowToPlayOpen(false)}
+      />
+
+      {/* Reset Confirmation Modal */}
+      <ResetConfirmModal
+        isOpen={isResetConfirmOpen}
+        onClose={() => setIsResetConfirmOpen(false)}
+        onConfirm={handleRestart}
       />
     </div>
   );
