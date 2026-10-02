@@ -236,7 +236,7 @@ const GameMain: React.FC = () => {
         onClick={() => setIsLevelInfoOpen(true)}
         title={t.about}
         aria-label={t.about}
-        className="fixed top-3 left-3 sm:top-5 sm:left-5 z-20 p-2 text-zinc-500 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
+        className="fixed top-3 left-3 sm:top-5 sm:left-5 z-20 p-2 text-zinc-400 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
       >
         <Info className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
       </button>
@@ -247,7 +247,7 @@ const GameMain: React.FC = () => {
         onClick={() => setIsHowToPlayOpen(true)}
         title={t.howToPlay}
         aria-label={t.howToPlay}
-        className="fixed top-3 right-3 sm:top-5 sm:right-5 z-20 p-2 text-zinc-500 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
+        className="fixed top-3 right-3 sm:top-5 sm:right-5 z-20 p-2 text-zinc-400 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
       >
         <HelpCircle className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
       </button>
@@ -258,7 +258,7 @@ const GameMain: React.FC = () => {
         onClick={() => setIsResetConfirmOpen(true)}
         title={t.restart}
         aria-label={t.restart}
-        className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 p-2 text-zinc-500 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
+        className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 p-2 text-zinc-400 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
       >
         <RotateCcw className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
       </button>
@@ -270,7 +270,7 @@ const GameMain: React.FC = () => {
         disabled={history.length === 0 || inspection.won}
         title={t.undo}
         aria-label={t.undo}
-        className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 p-2 text-zinc-500 hover:text-white active:scale-90 transition-all duration-150 disabled:opacity-20 disabled:hover:text-zinc-500 disabled:cursor-not-allowed cursor-pointer bg-transparent border-0 outline-none select-none"
+        className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 p-2 text-zinc-400 hover:text-white active:scale-90 transition-all duration-150 disabled:opacity-25 disabled:hover:text-zinc-400 disabled:cursor-not-allowed cursor-pointer bg-transparent border-0 outline-none select-none"
       >
         <Undo2 className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
       </button>

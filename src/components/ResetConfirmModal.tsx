@@ -23,7 +23,7 @@ export const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xs bg-[#0f0f12] rounded-3xl p-6 shadow-2xl text-center text-zinc-100 relative flex flex-col"
+        className="w-full max-w-xs bg-[#0f0f14] rounded-3xl p-6 border border-zinc-800 shadow-2xl text-center text-zinc-100 relative flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <RotateCcw className="w-6 h-6 text-zinc-400 mx-auto mb-3 stroke-[2]" />
@@ -36,7 +36,7 @@ export const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 px-4 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 text-xs sm:text-sm font-medium transition-colors cursor-pointer select-none"
+            className="flex-1 py-2.5 px-4 rounded-xl text-zinc-300 hover:text-white hover:bg-white/5 text-xs sm:text-sm font-medium transition-colors cursor-pointer select-none"
           >
             {t.clearCancel}
           </button>

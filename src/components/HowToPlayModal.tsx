@@ -42,7 +42,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-md max-h-[85vh] bg-[#0f0f12] rounded-3xl p-5 sm:p-6 shadow-2xl text-zinc-200 relative flex flex-col">
+      <div className="w-full max-w-md max-h-[85vh] bg-[#0f0f14] rounded-3xl p-5 sm:p-6 border border-zinc-800 shadow-2xl text-zinc-200 relative flex flex-col">
         {/* Header without border line */}
         <div className="flex items-start justify-between pb-2">
           <div>
@@ -50,7 +50,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
               <Moon className="w-4 h-4 text-amber-300 fill-amber-300/20 shrink-0" strokeWidth={1.75} />
               <span>{t.rulesTitle}</span>
             </h2>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-xs text-zinc-300 mt-1">
               {t.rulesGoal}
             </p>
           </div>
@@ -59,7 +59,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
             type="button"
             onClick={onClose}
             aria-label={t.close}
-            className="p-1 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+            className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -76,7 +76,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
                 {item.icon}
                 <span>{item.title}</span>
               </div>
-              <p className="text-zinc-400 pl-6 text-xs sm:text-[13px] leading-relaxed">
+              <p className="text-zinc-300 pl-6 text-xs sm:text-[13px] leading-relaxed">
                 {item.desc}
               </p>
             </div>
@@ -88,7 +88,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs text-zinc-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors cursor-pointer"
           >
             {t.close}
           </button>

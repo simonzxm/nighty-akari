@@ -55,7 +55,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-sm max-h-[80vh] bg-[#0f0f12] rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col text-zinc-200 relative">
+      <div className="w-full max-w-sm max-h-[80vh] bg-[#0f0f14] rounded-3xl p-5 sm:p-6 border border-zinc-800 shadow-2xl flex flex-col text-zinc-200 relative">
         {/* Header without dividers */}
         <div className="flex items-center justify-between pb-3">
           <div className="flex items-baseline gap-2">
@@ -63,7 +63,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
               <Moon className="w-4 h-4 text-amber-300 fill-amber-300/20 shrink-0" strokeWidth={1.75} />
               <span>{t.archiveTitle}</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-mono">
+            <span className="text-xs text-zinc-400 font-mono">
               {totalCompleted} / {availablePuzzles.length}
             </span>
           </div>
@@ -72,7 +72,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={t.close}
-            className="p-1 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+            className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -100,7 +100,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
                 className={`w-full px-3.5 py-3 rounded-2xl flex flex-col gap-1 text-left transition-all cursor-pointer select-none ${
                   isCurrent
                     ? 'bg-white/10 ring-1 ring-white/15 text-white'
-                    : 'text-zinc-300 hover:bg-white/5 active:bg-white/10'
+                    : 'text-zinc-200 hover:bg-white/5 active:bg-white/10'
                 }`}
               >
                 {/* Row 1: Issue Title & Today on Left, Solved Moves / Status on Right */}
@@ -127,7 +127,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
                         {solveMoves} {lang === 'zh' ? (isOptimal ? '步 (最优)' : '步') : 'moves'}
                       </span>
                     ) : (
-                      <span className="text-xs text-zinc-500 font-mono">
+                      <span className="text-xs text-zinc-400 font-mono">
                         {t.archiveStatusUnsolved}
                       </span>
                     )}
@@ -135,18 +135,18 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
                 </div>
 
                 {/* Row 2: Date & Difficulty on Left, Solved Time on Right */}
-                <div className="flex items-center justify-between w-full text-[11px] text-zinc-400 font-mono">
+                <div className="flex items-center justify-between w-full text-[11px] text-zinc-300 font-mono">
                   <div className="truncate">
                     <span>{formatGameDate(puzzle.date, lang)}</span>
-                    <span className="mx-1.5 text-zinc-600">·</span>
-                    <span className="text-zinc-400">{getDifficultyText(puzzle.difficulty)}</span>
+                    <span className="mx-1.5 text-zinc-500">·</span>
+                    <span className="text-zinc-300">{getDifficultyText(puzzle.difficulty)}</span>
                   </div>
 
-                  <div className="shrink-0 text-right ml-2 text-zinc-400">
+                  <div className="shrink-0 text-right ml-2 text-zinc-300">
                     {isSolved ? (
                       <span>{formatTime(solveTime)}</span>
                     ) : (
-                      <span className="text-zinc-600">—</span>
+                      <span className="text-zinc-500">—</span>
                     )}
                   </div>
                 </div>

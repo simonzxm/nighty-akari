@@ -45,22 +45,22 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
   }
 
   // Refined Color Palette:
-  // - Lamp cell (epicenter): luminous warm sunbeam
-  // - Lit empty cell: soft glowing golden ivory
-  // - Unlit cell: calm dark slate tile
-  let bgClass = 'bg-[#181920]';
+  // - Lamp cell (epicenter): luminous warm sunbeam with amber border
+  // - Lit empty cell: glowing golden ivory with amber border
+  // - Unlit playable cell: clearly distinct dark slate tile with visible border
+  let bgClass = 'bg-[#1e202b] border border-slate-700/50 hover:bg-[#272a39]';
 
   if (hasBulb) {
-    bgClass = 'bg-gradient-to-br from-[#fbbf24] to-[#f59e0b] shadow-[inset_0_0_16px_rgba(180,83,9,0.35)]';
+    bgClass = 'bg-gradient-to-br from-[#fbbf24] to-[#f59e0b] border border-amber-400/90 shadow-[inset_0_0_16px_rgba(180,83,9,0.35)]';
   } else if (isLit) {
-    bgClass = 'bg-[#fef3c7] shadow-[inset_0_0_8px_rgba(251,191,36,0.12)]';
+    bgClass = 'bg-[#fef3c7] border border-amber-300/60 shadow-[inset_0_0_8px_rgba(251,191,36,0.18)]';
   }
 
   // Hover beam preview
   if (isInPreviewRay && !isLit) {
-    bgClass = 'bg-[#2a2c38]';
+    bgClass = 'bg-[#323648] border border-amber-400/50';
   } else if (isInPreviewRay && isLit && !hasBulb) {
-    bgClass = 'bg-[#fef9c3]';
+    bgClass = 'bg-[#fde68a] border border-amber-400/70 shadow-[inset_0_0_10px_rgba(245,158,11,0.25)]';
   }
 
   return (
@@ -111,23 +111,24 @@ export const WallCell: React.FC<WallCellProps> = ({
   const isSatisfied = isNumbered && currentCount === target;
   const isViolated = isNumbered && currentCount > target;
 
-  let textStyle = 'text-zinc-400 font-medium';
-  let bgStyle = 'bg-[#090a0e]';
+  // Obsidian wall block styling with inset depth
+  let textStyle = 'text-zinc-100 font-bold';
+  let bgStyle = 'bg-[#06070a] border border-zinc-800/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)]';
 
   if (isSatisfied) {
-    // Satisfied condition: warm amber fulfillment
+    // Satisfied condition: warm amber fulfillment with soft aura
     textStyle = 'text-amber-300 font-bold';
-    bgStyle = 'bg-[#15140d]';
+    bgStyle = 'bg-[#18150c] border border-amber-400/50 shadow-[0_0_12px_rgba(245,158,11,0.22),inset_0_1px_3px_rgba(245,158,11,0.15)]';
   } else if (isViolated || previewViolated) {
-    // Error / Violation condition: crisp rose-red
-    textStyle = 'text-rose-400 font-bold';
-    bgStyle = 'bg-rose-950/50';
+    // Error / Violation condition: crisp rose-red warning
+    textStyle = 'text-rose-300 font-bold';
+    bgStyle = 'bg-rose-950/70 border border-rose-500/60 shadow-[0_0_12px_rgba(244,63,94,0.3)]';
   }
 
   return (
     <div
       aria-label={`Wall at row ${wall.r + 1}, col ${wall.c + 1}${
-        isNumbered ? `, target ${target}, current ${currentCount}` : ''
+        isNumbered ? `, target ${target}, current ${currentCount}` : ', solid obstacle'
       }`}
       className={`relative aspect-square rounded-md sm:rounded-lg select-none flex items-center justify-center font-mono transition-colors duration-150 ${bgStyle} ${textStyle}`}
     >
@@ -135,7 +136,17 @@ export const WallCell: React.FC<WallCellProps> = ({
         <span className="select-none text-xl sm:text-2xl leading-none tracking-tight">
           {wall.value}
         </span>
-      ) : null}
+      ) : (
+        /* Unnumbered Wall Pillar Marker to distinguish immediately from empty floor */
+        <svg
+          viewBox="0 0 16 16"
+          className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-zinc-700/70 fill-current select-none pointer-events-none"
+          aria-hidden="true"
+        >
+          <rect x="7" y="3" width="2" height="10" rx="1" />
+          <rect x="3" y="7" width="10" height="2" rx="1" />
+        </svg>
+      )}
     </div>
   );
 };

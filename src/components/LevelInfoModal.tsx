@@ -110,7 +110,7 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-xs bg-[#0f0f12] rounded-3xl p-6 sm:p-7 shadow-2xl text-center text-zinc-100 relative flex flex-col">
+      <div className="w-full max-w-xs bg-[#0f0f14] rounded-3xl p-6 sm:p-7 border border-zinc-800 shadow-2xl text-center text-zinc-100 relative flex flex-col">
         {/* Top Control Bar: Lang & Close */}
         <div className="flex items-center justify-between pb-2">
           <button
@@ -118,7 +118,7 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
             onClick={toggleLanguage}
             title={t.language}
             aria-label={t.language}
-            className="text-xs font-mono text-zinc-500 hover:text-white transition-colors flex items-center gap-1 cursor-pointer py-1 px-1.5"
+            className="text-xs font-mono text-zinc-400 hover:text-white transition-colors flex items-center gap-1 cursor-pointer py-1 px-1.5"
           >
             <Languages className="w-3.5 h-3.5" />
             <span>{lang === 'en' ? '中' : 'EN'}</span>
@@ -128,7 +128,7 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={t.close}
-            className="p-1 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+            className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -140,7 +140,7 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
           <div className="text-2xl font-bold tracking-tight text-white mb-1">
             {t.dailyNo(puzzle.id)}
           </div>
-          <div className="text-xs text-zinc-400 font-mono">
+          <div className="text-xs text-zinc-300 font-mono">
             {formatGameDate(puzzle.date, lang)} · {difficultyText}
           </div>
         </div>
@@ -158,14 +158,14 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
             ) : moves > 0 ? (
               <span className="text-amber-300/80">{t.inProgress}</span>
             ) : (
-              <span className="text-zinc-500">{t.notStarted}</span>
+              <span className="text-zinc-400">{t.notStarted}</span>
             )}
           </div>
 
           {/* Time & Moves Numbers */}
           <div className="flex justify-center gap-10 my-4">
             <div>
-              <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-1">
+              <div className="text-[11px] text-zinc-400 uppercase tracking-wider mb-1">
                 {t.timeLabel}
               </div>
               <div className="text-2xl font-mono font-semibold text-white">
@@ -174,12 +174,12 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
             </div>
 
             <div>
-              <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-1">
+              <div className="text-[11px] text-zinc-400 uppercase tracking-wider mb-1">
                 {t.movesLabel}
               </div>
               <div className="text-2xl font-mono font-semibold text-white">
                 {statMoves}
-                <span className="text-xs text-zinc-500 font-normal ml-1 font-mono">
+                <span className="text-xs text-zinc-400 font-normal ml-1 font-mono">
                   / {hasCompletedRecord ? puzzle.optimalMoves : '?'}
                 </span>
               </div>
@@ -259,7 +259,7 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
               onClose();
               onOpenArchive();
             }}
-            className="w-full py-2 text-zinc-500 hover:text-white text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full py-2 text-zinc-400 hover:text-white text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5" />
             <span>{t.archive}</span>
