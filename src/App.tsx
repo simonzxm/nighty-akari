@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Info, HelpCircle, RotateCcw, Undo2 } from 'lucide-react';
 import { I18nProvider, useI18n } from './i18n';
 import { getDailyPuzzle } from './utils/daily';
 import { buildBoard, inspectBoard, tryToggleLight } from './engine/core';
@@ -11,10 +12,9 @@ import {
   clearSavedGameState,
   PuzzleRecord,
 } from './utils/storage';
-import { Header } from './components/Header';
 import { Board } from './components/Board';
 import { Toast } from './components/Toast';
-import { VictoryModal } from './components/VictoryModal';
+import { LevelInfoModal } from './components/LevelInfoModal';
 import { ArchiveModal } from './components/ArchiveModal';
 import { HowToPlayModal } from './components/HowToPlayModal';
 
@@ -64,8 +64,8 @@ const GameMain: React.FC = () => {
   // Solved records
   const [records, setRecords] = useState<Record<string, PuzzleRecord>>(() => loadAllRecords());
 
-  // Modals & toast
-  const [isVictoryOpen, setIsVictoryOpen] = useState(false);
+  // Unified Level Info / Victory modal opens automatically on start
+  const [isLevelInfoOpen, setIsLevelInfoOpen] = useState(true);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -73,7 +73,7 @@ const GameMain: React.FC = () => {
   // Board inspection
   const inspection = useMemo(() => inspectBoard(model, state), [model, state]);
 
-  // Sync state when puzzle changes
+  // Switch puzzle from archive
   const switchPuzzle = useCallback((newPuzzle: PuzzleDefinition) => {
     setCurrentPuzzle(newPuzzle);
     const newModel = buildBoard(newPuzzle);
@@ -90,6 +90,8 @@ const GameMain: React.FC = () => {
             moves: idx,
           }))
         );
+        setIsArchiveOpen(false);
+        setIsLevelInfoOpen(true);
         return;
       } catch {}
     }
@@ -99,9 +101,11 @@ const GameMain: React.FC = () => {
     setStartTime(null);
     setHistory([]);
     setElapsedSeconds(0);
+    setIsArchiveOpen(false);
+    setIsLevelInfoOpen(true);
   }, []);
 
-  // Timer running silently in background
+  // Timer running in background
   useEffect(() => {
     if (!startTime || inspection.won) return;
     const interval = setInterval(() => {
@@ -110,7 +114,7 @@ const GameMain: React.FC = () => {
     return () => clearInterval(interval);
   }, [startTime, inspection.won]);
 
-  // Handle victory detection
+  // Handle victory detection: automatically pop up unified settlement modal
   useEffect(() => {
     if (inspection.won) {
       const finalTime = startTime ? Math.max(1, Math.floor((Date.now() - startTime) / 1000)) : 1;
@@ -127,7 +131,7 @@ const GameMain: React.FC = () => {
 
       savePuzzleRecord(record);
       setRecords((prev) => ({ ...prev, [currentPuzzle.id]: record }));
-      setIsVictoryOpen(true);
+      setIsLevelInfoOpen(true);
     }
   }, [inspection.won, currentPuzzle, moves, startTime]);
 
@@ -150,7 +154,7 @@ const GameMain: React.FC = () => {
   const handleToggleCell = useCallback(
     (cellIndex: number) => {
       if (inspection.won) {
-        setIsVictoryOpen(true);
+        setIsLevelInfoOpen(true);
         return;
       }
 
@@ -197,7 +201,6 @@ const GameMain: React.FC = () => {
     setMoves(0);
     setStartTime(null);
     setElapsedSeconds(0);
-    setIsVictoryOpen(false);
   }, [currentPuzzle.id, model.initialState]);
 
   // Keyboard controls
@@ -208,9 +211,13 @@ const GameMain: React.FC = () => {
       }
 
       if (e.key === 'Escape') {
-        setIsVictoryOpen(false);
+        setIsLevelInfoOpen(false);
         setIsArchiveOpen(false);
         setIsHowToPlayOpen(false);
+      } else if (e.key === 'i' || e.key === 'I') {
+        setIsLevelInfoOpen((v) => !v);
+      } else if (e.key === '?') {
+        setIsHowToPlayOpen((v) => !v);
       } else if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey || !e.shiftKey)) {
         handleUndo();
       } else if (e.key === 'r' || e.key === 'R') {
@@ -225,19 +232,55 @@ const GameMain: React.FC = () => {
   }, [handleUndo, handleRestart]);
 
   return (
-    <div className="min-h-screen bg-black text-zinc-100 flex flex-col justify-between selection:bg-amber-400 selection:text-black">
-      {/* Daily Akari Minimalist Header */}
-      <Header
-        puzzle={currentPuzzle}
-        canUndo={history.length > 0 && !inspection.won}
-        onUndo={handleUndo}
-        onRestart={handleRestart}
-        onOpenArchive={() => setIsArchiveOpen(true)}
-        onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
-      />
+    <div className="relative w-screen h-screen overflow-hidden bg-black text-zinc-100 flex flex-col items-center justify-center selection:bg-amber-400 selection:text-black">
+      {/* 4 Corner Icon Buttons with NO background */}
+      {/* Top-Left: Level Info, Settlement & Archive */}
+      <button
+        type="button"
+        onClick={() => setIsLevelInfoOpen(true)}
+        title={t.about}
+        aria-label={t.about}
+        className="fixed top-3 left-3 sm:top-5 sm:left-5 z-20 p-2 text-zinc-500 hover:text-white transition-colors duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
+      >
+        <Info className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
+      </button>
 
-      {/* Main Focus Area: Pure, uncluttered board */}
-      <main className="flex-1 flex flex-col items-center justify-center">
+      {/* Top-Right: Game Rules */}
+      <button
+        type="button"
+        onClick={() => setIsHowToPlayOpen(true)}
+        title={t.howToPlay}
+        aria-label={t.howToPlay}
+        className="fixed top-3 right-3 sm:top-5 sm:right-5 z-20 p-2 text-zinc-500 hover:text-white transition-colors duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
+      >
+        <HelpCircle className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
+      </button>
+
+      {/* Bottom-Left: Restart Level */}
+      <button
+        type="button"
+        onClick={handleRestart}
+        title={t.restart}
+        aria-label={t.restart}
+        className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 p-2 text-zinc-500 hover:text-white transition-colors duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
+      >
+        <RotateCcw className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
+      </button>
+
+      {/* Bottom-Right: Undo Move */}
+      <button
+        type="button"
+        onClick={handleUndo}
+        disabled={history.length === 0 || inspection.won}
+        title={t.undo}
+        aria-label={t.undo}
+        className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 p-2 text-zinc-500 hover:text-white transition-colors duration-150 disabled:opacity-20 disabled:hover:text-zinc-500 disabled:cursor-not-allowed cursor-pointer bg-transparent border-0 outline-none select-none"
+      >
+        <Undo2 className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
+      </button>
+
+      {/* Center Board: Pure and text-free */}
+      <main className="w-full h-full flex items-center justify-center p-4">
         <Board
           model={model}
           state={state}
@@ -247,21 +290,23 @@ const GameMain: React.FC = () => {
         />
       </main>
 
-      {/* Subtle, minimal footer */}
-      <footer className="w-full py-4 text-center text-xs text-zinc-400 font-mono tracking-wider">
-        <span>NIGHTY AKARI · LIGHT UP THE NIGHT</span>
-      </footer>
-
-      {/* Toast for error or feedback */}
+      {/* Toast for error or feedback notifications */}
       <Toast message={toastMessage} onClear={() => setToastMessage(null)} />
 
-      {/* Victory Celebration Modal */}
-      <VictoryModal
-        isOpen={isVictoryOpen}
-        onClose={() => setIsVictoryOpen(false)}
+      {/* Unified Level Info & Settlement Modal */}
+      <LevelInfoModal
+        isOpen={isLevelInfoOpen}
+        onClose={() => setIsLevelInfoOpen(false)}
         puzzle={currentPuzzle}
+        isWon={inspection.won}
         moves={moves}
         timeSeconds={elapsedSeconds}
+        record={records[currentPuzzle.id]}
+        onOpenArchive={() => {
+          setIsLevelInfoOpen(false);
+          setIsArchiveOpen(true);
+        }}
+        onRestart={handleRestart}
       />
 
       {/* Archive Modal */}
@@ -273,7 +318,7 @@ const GameMain: React.FC = () => {
         records={records}
       />
 
-      {/* How To Play Modal */}
+      {/* How To Play Rules Modal */}
       <HowToPlayModal
         isOpen={isHowToPlayOpen}
         onClose={() => setIsHowToPlayOpen(false)}

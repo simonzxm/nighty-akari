@@ -41,7 +41,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
       <div className="w-full max-w-lg max-h-[90vh] bg-[#0c0c0f] border border-zinc-800 rounded-2xl p-6 sm:p-7 shadow-2xl text-zinc-200 relative flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between pb-3 border-b border-zinc-800/80">

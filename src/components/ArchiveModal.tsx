@@ -26,7 +26,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
       <div className="w-full max-w-lg max-h-[85vh] bg-[#0d0d10] border border-zinc-800 rounded-2xl p-6 shadow-2xl flex flex-col text-zinc-200 relative">
         <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
           <div>
