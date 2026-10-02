@@ -27,9 +27,9 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
 
   const todayStr = getTodayDateString();
 
-  // Released puzzles on or before today, or already played, sorted descending (newest on top)
+  // Development shows all authored puzzles; production shows released puzzles only.
   const availablePuzzles = DAILY_PUZZLES.filter(
-    (p) => p.date <= todayStr || Boolean(records[p.id])
+    (p) => import.meta.env.DEV || p.date <= todayStr
   ).sort((a, b) => b.id - a.id);
 
   const totalCompleted = availablePuzzles.filter((p) => Boolean(records[p.id])).length;

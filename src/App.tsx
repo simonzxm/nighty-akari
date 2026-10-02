@@ -23,7 +23,7 @@ const GameMain: React.FC = () => {
   const { t } = useI18n();
 
   // Active puzzle
-  const [currentPuzzle, setCurrentPuzzle] = useState<PuzzleDefinition>(() => getDailyPuzzle());
+  const [currentPuzzle, setCurrentPuzzle] = useState<PuzzleDefinition>(() => getDailyPuzzle()!);
   const model = useMemo(() => buildBoard(currentPuzzle), [currentPuzzle]);
 
   // Board state & history

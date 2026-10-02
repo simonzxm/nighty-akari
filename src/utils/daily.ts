@@ -1,9 +1,6 @@
 import { DAILY_PUZZLES } from '../data/puzzles';
 import { PuzzleDefinition } from '../engine/types';
 
-// Anchor date: 2026-10-01 is Puzzle #1
-const ANCHOR_DATE = new Date('2026-10-01T00:00:00');
-
 export function getTodayDateString(d: Date = new Date()): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -11,23 +8,10 @@ export function getTodayDateString(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-/**
- * Returns the index of today's puzzle based on days elapsed since anchor.
- */
-export function getDailyPuzzleIndex(targetDate: Date = new Date()): number {
-  const diffTime = targetDate.getTime() - ANCHOR_DATE.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  if (diffDays <= 0) return 0;
-  return diffDays % DAILY_PUZZLES.length;
-}
-
-export function getDailyPuzzle(targetDate: Date = new Date()): PuzzleDefinition {
-  const idx = getDailyPuzzleIndex(targetDate);
-  return DAILY_PUZZLES[idx];
-}
-
-export function getPuzzleById(puzzleId: number): PuzzleDefinition | undefined {
-  return DAILY_PUZZLES.find(p => p.id === puzzleId);
+export function getDailyPuzzle(targetDate: Date = new Date()): PuzzleDefinition | undefined {
+  const today = getTodayDateString(targetDate);
+  const released = DAILY_PUZZLES.filter(p => p.date <= today);
+  return released.at(-1) ?? (import.meta.env.DEV ? DAILY_PUZZLES[0] : undefined);
 }
 
 export function formatGameDate(dateStr: string, lang: 'en' | 'zh'): string {
