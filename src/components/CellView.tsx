@@ -44,17 +44,23 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
     cursorClass = 'cursor-not-allowed';
   }
 
-  // Pure colors without borders
-  let bgClass = 'bg-[#18181c]';
-  if (isLit) {
-    bgClass = 'bg-[#fef08a]';
+  // Refined Color Palette:
+  // - Lamp cell (epicenter): luminous warm sunbeam
+  // - Lit empty cell: soft glowing golden ivory
+  // - Unlit cell: calm dark slate tile
+  let bgClass = 'bg-[#181920]';
+
+  if (hasBulb) {
+    bgClass = 'bg-gradient-to-br from-[#fbbf24] to-[#f59e0b] shadow-[inset_0_0_16px_rgba(180,83,9,0.35)]';
+  } else if (isLit) {
+    bgClass = 'bg-[#fef3c7] shadow-[inset_0_0_8px_rgba(251,191,36,0.12)]';
   }
 
-  // Subtle preview illumination without harsh border rings
+  // Hover beam preview
   if (isInPreviewRay && !isLit) {
-    bgClass = 'bg-[#27272e]';
-  } else if (isInPreviewRay && isLit) {
-    bgClass = 'bg-[#fff59d]';
+    bgClass = 'bg-[#2a2c38]';
+  } else if (isInPreviewRay && isLit && !hasBulb) {
+    bgClass = 'bg-[#fef9c3]';
   }
 
   return (
@@ -63,7 +69,7 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
       tabIndex={0}
       aria-label={`Row ${r + 1}, Col ${c + 1}, ${
         isSeed
-          ? 'Seed light'
+          ? 'Permanent celestial moon'
           : hasBulb
           ? 'Light bulb, click to extinguish'
           : isLit
@@ -75,19 +81,21 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
       onMouseLeave={onMouseLeave}
       onFocus={onMouseEnter}
       onBlur={onMouseLeave}
-      className={`relative aspect-square transition-colors duration-100 flex items-center justify-center select-none outline-none ${cursorClass} ${bgClass}`}
+      className={`relative aspect-square rounded-md sm:rounded-lg transition-all duration-150 flex items-center justify-center select-none outline-none ${cursorClass} ${bgClass}`}
     >
-      {/* Light Bulb */}
+      {/* Placed Lamp / Celestial Moon */}
       {hasBulb && (
         <BulbIcon
           isSeed={isSeed}
-          className="transition-transform duration-100 transform hover:scale-105 active:scale-95"
+          className="transition-transform duration-150 transform hover:scale-105 active:scale-95"
         />
       )}
 
-      {/* Subtle indicator when empty lit cell is hovered */}
+      {/* Ghost Lamp Preview on Hover when playable */}
       {!hasBulb && isLit && isHovered && canPlace && (
-        <div className="w-2.5 h-2.5 rounded-full bg-amber-500/40 pointer-events-none" />
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40 transform scale-90 transition-opacity">
+          <BulbIcon isSeed={false} />
+        </div>
       )}
     </button>
   );
@@ -103,14 +111,17 @@ export const WallCell: React.FC<WallCellProps> = ({
   const isSatisfied = isNumbered && currentCount === target;
   const isViolated = isNumbered && currentCount > target;
 
-  let textStyle = 'text-white';
-  let bgStyle = 'bg-black';
+  let textStyle = 'text-zinc-400 font-medium';
+  let bgStyle = 'bg-[#090a0e]';
 
   if (isSatisfied) {
-    textStyle = 'text-zinc-500';
+    // Satisfied condition: warm amber fulfillment
+    textStyle = 'text-amber-300 font-bold';
+    bgStyle = 'bg-[#15140d]';
   } else if (isViolated || previewViolated) {
-    textStyle = 'text-rose-400';
-    bgStyle = 'bg-rose-950/40';
+    // Error / Violation condition: crisp rose-red
+    textStyle = 'text-rose-400 font-bold';
+    bgStyle = 'bg-rose-950/50';
   }
 
   return (
@@ -118,10 +129,10 @@ export const WallCell: React.FC<WallCellProps> = ({
       aria-label={`Wall at row ${wall.r + 1}, col ${wall.c + 1}${
         isNumbered ? `, target ${target}, current ${currentCount}` : ''
       }`}
-      className={`relative aspect-square select-none flex items-center justify-center font-mono font-bold transition-colors duration-100 ${bgStyle} ${textStyle}`}
+      className={`relative aspect-square rounded-md sm:rounded-lg select-none flex items-center justify-center font-mono transition-colors duration-150 ${bgStyle} ${textStyle}`}
     >
       {isNumbered ? (
-        <span className="select-none text-xl sm:text-2xl leading-none">
+        <span className="select-none text-xl sm:text-2xl leading-none tracking-tight">
           {wall.value}
         </span>
       ) : null}

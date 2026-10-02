@@ -46,7 +46,9 @@ export const Board: React.FC<BoardProps> = ({
   return (
     <div className="flex flex-col items-center justify-center w-full px-4 py-6">
       <div
-        className="grid gap-[1.5px] w-full max-w-[390px] aspect-square bg-[#26262c] p-[1.5px] rounded-xl overflow-hidden shadow-2xl transition-all duration-300"
+        className={`grid gap-1 sm:gap-1.5 w-full max-w-[400px] aspect-square bg-[#12131a] p-1.5 sm:p-2 rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] transition-all duration-500 ${
+          isWon ? 'animate-victory-glow ring-1 ring-amber-400/40' : ''
+        }`}
         style={{
           gridTemplateColumns: `repeat(${model.w}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${model.h}, minmax(0, 1fr))`,
