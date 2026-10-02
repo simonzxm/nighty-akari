@@ -1,63 +1,125 @@
 # Nighty Akari
 
-A minimalist daily light relay puzzle inspired by Daily Akari's clean, pitch-black visual aesthetic, featuring a dynamic pathfinding and capacity-scheduling mechanic.
+A daily light-relay puzzle built with React and Vite. The website runs on Cloudflare Pages; its public puzzle JSON is published separately to Cloudflare R2.
 
-## Game Rules
+## Game rules
 
-1. **Light Beams**: Lamps cast straight beams horizontally and vertically across white squares until blocked by a dark wall or grid edge. Beams pass through other lamps.
-2. **Borrowing Light**: You can only place a new lamp on a square that is currently illuminated. Use existing light to relay into the darkness.
-3. **Block Limits & Targets**: The number on a dark block is the total count of light beams shining into it (from all lamps in its row and column). Beams hitting a block can **never** exceed this number at any point, and must exactly match it to win.
-4. **Extinguish & Scaffold**: Click any existing lamp to extinguish it, reclaiming beams and freeing block capacity. Place temporary lamps to reach distant areas, then extinguish them once new footholds are established.
-5. **Initial Seed Moon**: The celestial moon is permanent and cannot be extinguished.
-6. **Victory Condition**: Illuminate all white squares while ensuring all numbered blocks are satisfied simultaneously.
+1. Lamps illuminate white squares horizontally and vertically until a wall or edge. Light passes through other lamps.
+2. A new lamp can only be placed on an illuminated square.
+3. A numbered wall counts all beams reaching it. Its capacity must never be exceeded and its target must be met to win.
+4. Lamps can be extinguished to free wall capacity, including temporary lamps used to reach new areas.
+5. The initial moon is permanent.
+6. Win by illuminating every white square and meeting every numbered wall target.
 
-## Controls
+Click to place or extinguish a lamp. `Z` or `U` undoes a move, `R` restarts, and `Esc` closes modals. Completed results and in-progress games are stored in the browser.
 
-- **Mouse / Touch**:
-  - Click on an illuminated white square to place a light.
-  - Click on an existing light to extinguish it.
-  - Hover over a cell to preview light beams and wall hit transitions.
-- **Keyboard Shortcuts**:
-  - `Z` or `U`: Undo last move
-  - `R`: Restart puzzle
-  - `Esc`: Close modals
+## Local development and authoring
 
-## Features
-
-- **Daily Puzzles**: Curated daily challenge with past puzzle archive.
-- **Optimal Benchmark**: BFS solver calculates the theoretical minimum moves for every puzzle.
-- **Clean Dark Aesthetics**: Pitch-black interface focusing solely on the puzzle, with zero distracting in-game clutter.
-- **Bilingual i18n**: Full Chinese (`zh`) and English (`en`) support with instant language switching.
-- **Minimal Text Sharing**: One-click minimal text result copy to clipboard:
-  ```text
-  Nighty Akari No. 1 (2026-10-01)
-  Time: 01:23
-  Moves: 7 (Optimal: 7)
-  https://<user>.github.io/nighty-akari/
-  ```
-- **Local Persistence**: Saves completed puzzles, moves, and time records to LocalStorage.
-
-## Development
+Use Node.js 22.15+ (or 24+) and npm:
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
+npm run puzzles:build
 npm run dev
-
-# Build for production
-npm run build
-
-# Preview build locally
-npm run preview
 ```
 
-## GitHub Pages Deployment
+Each file in `puzzles/source/` contains only a board and its permanent moon position:
 
-The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically builds and deploys the site to GitHub Pages whenever changes are pushed to `main`.
+```json
+{
+  "rows": ["...10", "#1.0#", "....1", "...21", "3...."],
+  "seed": [4, 1]
+}
+```
 
-In your repository on GitHub:
-1. Go to **Settings** > **Pages**.
-2. Under **Build and deployment** > **Source**, choose **GitHub Actions**.
-3. Push to `main` branch to trigger automatic deployment.
+- `.` is a white cell; `#` is an unnumbered wall; `0`–`9` are beam-count targets. One character represents one cell. Targets above 9 are not supported by this format.
+- `seed` is `[row, column]`, **one-indexed**.
+- Files are sorted by filename (lexicographically). Use fixed-width names such as `001.json`, `002.json`, `003.json`, then append new files.
+- IDs are generated as 1, 2, 3, …; dates are consecutive calendar days starting on `2026-10-01`, configured in `scripts/build-puzzles.ts`.
+- There is no manual index or schedule. Inserting, deleting, or renaming files can renumber later puzzles. Existing browser records are not migrated or cleared.
+
+`npm run puzzles:build` writes `puzzles/generated/puzzles.json` and `analysis.json`. Successful calculations are cached in `.puzzle-cache/` by board contents and analysis version. Generated files and cache are ignored by Git. Keep your source files backed up yourself; publishing uploads only the game JSON.
+
+Local development fetches the generated JSON and shows **all** puzzles in the existing archive, including future dates. Rebuild the puzzle data and refresh after editing sources. No editor or additional UI is provided.
+
+### Calculation and difficulty
+
+The solver returns exact minimum moves and the minimum extinguish count among all shortest solutions. Small boards use breadth-first search; larger boards use memory-saving iterative-deepening A* (IDA*).
+
+```bash
+npm run puzzles:build -- --algorithm ida
+npm run puzzles:build -- --max-states 1000000 --timeout-seconds 300
+```
+
+`--algorithm bfs|ida` selects the solver explicitly. `--max-states` and `--timeout-seconds` accept non-negative integers; `0` means unlimited. Computation can take a long time on large boards, and available memory/stack still impose practical limits. An incomplete calculation is not classified as unsolvable and cannot be published. Cached successful results are reused regardless of the new budget or algorithm. Delete `.puzzle-cache/` when you want to recalculate; cache does not resume interrupted searches.
+
+Difficulty is a deterministic heuristic:
+
+```text
+score = optimalMoves
+      + 2 × minimumExtinguishesAmongShortestSolutions
+      + max(0, ceil(whiteCells / 10) - 2)
+
+easy:   score ≤ 13
+medium: score ≤ 20
+hard:   score > 20
+```
+
+This is calibrated to the first three authored boards (easy, easy, low medium), not to measured player performance. The formula and analysis version live in `src/engine/difficulty.ts`; detailed metrics and a representative shortest path are in the local analysis report, not the published game JSON.
+
+## Public R2 setup
+
+One-time setup in your Cloudflare account:
+
+1. Create an R2 bucket and connect a subdomain of your existing Cloudflare-managed domain, such as `puzzles.example.com`. Use a custom domain for production, not `r2.dev`.
+2. In the bucket's CORS settings, allow public JSON reads. Since this puzzle bank is public, the following dashboard policy permits reads from any origin:
+
+   ```json
+   [
+     {
+       "AllowedOrigins": ["*"],
+       "AllowedMethods": ["GET", "HEAD"]
+     }
+   ]
+   ```
+
+3. Add a Cloudflare Cache Rule for the puzzle hostname and `/puzzles.json` path with **Bypass cache**. Purge any old cached object after changing CORS/cache settings. Uploads also set `Cache-Control: no-cache, max-age=0, must-revalidate`.
+4. Create an R2 **Object Read & Write** S3 token scoped to this bucket. Record its Access Key ID, Secret Access Key, and S3 endpoint.
+5. Copy `.env.example` to `.env.local` and fill in your public URL and local upload credentials. The file is ignored by Git. Never put credentials in `VITE_` variables or a Cloudflare Pages frontend environment variable.
+
+Official references: [public buckets](https://developers.cloudflare.com/r2/buckets/public-buckets/), [CORS](https://developers.cloudflare.com/r2/buckets/cors/), [R2 credentials](https://developers.cloudflare.com/r2/api/tokens/).
+
+## Publish puzzles independently
+
+```bash
+npm run puzzles:publish
+# Solver flags also work when publishing:
+npm run puzzles:publish -- --timeout-seconds 300
+```
+
+Publishing validates settings, builds the full puzzle bank (reusing cached analysis), then uploads one `puzzles.json` object. Invalid, unsolvable, or incomplete puzzles abort publishing. Upload errors are reported in the terminal. No versions, backup objects, rollback tools, or server-side code are added.
+
+All puzzle data is publicly readable, including future boards. Only the production archive UI hides future puzzles.
+
+## Website deployment
+
+Set **only** `VITE_PUZZLES_URL` in your Cloudflare Pages build environment to the full public object URL, for example `https://puzzles.example.com/puzzles.json`.
+
+```bash
+npm run build
+```
+
+Use `npm run build` and output directory `dist` in Cloudflare Pages. No Functions or R2 binding are needed. `npm run preview` previews the production build and reads the same remote URL.
+
+The website build does not calculate or embed puzzles. It fetches and validates the remote JSON before mounting the existing game. There is **no bundled puzzle bank, fallback data, loading/error UI, automatic retry, or saved-game migration**. A failed request is recorded in the console and the game does not start. If today's puzzle is absent, the latest released puzzle is selected with its actual date; puzzles do not loop.
+
+Deploy the website once after configuring the public URL. Subsequent puzzle updates need only `npm run puzzles:publish`, not Git commits or a Pages deployment. Website code changes still require a normal deployment.
+
+## Verification
+
+```bash
+npm run typecheck
+npm run build
+```
+
+No test suite is included. Use actual batch analysis and manual gameplay to check authored puzzles.
