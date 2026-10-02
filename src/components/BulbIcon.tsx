@@ -8,58 +8,35 @@ interface BulbIconProps {
 export const BulbIcon: React.FC<BulbIconProps> = ({ isSeed = false, className = '' }) => {
   if (isSeed) {
     return (
-      <div className={`relative flex items-center justify-center ${className}`}>
-        {/* Outer radial glow */}
-        <div className="absolute w-8 h-8 rounded-full bg-amber-400/30 blur-md pointer-events-none" />
-        
-        {/* Seed Star Icon */}
+      <div className={`relative flex items-center justify-center w-full h-full p-2 select-none pointer-events-none ${className}`}>
+        {/* Soft pure white subtle radial halo */}
+        <div className="absolute w-[80%] h-[80%] rounded-full bg-white/20 blur-md pointer-events-none" />
+
+        {/* Large Pure White 4-Point Radiant Seed Star */}
         <svg
           viewBox="0 0 24 24"
-          className="w-7 h-7 text-amber-900 fill-amber-950/80 drop-shadow-[0_0_8px_rgba(250,204,21,0.9)] animate-light-pulse"
+          className="w-[74%] h-[74%] max-w-[42px] max-h-[42px] drop-shadow-[0_2px_5px_rgba(0,0,0,0.55)] transition-transform duration-150 transform hover:scale-105"
         >
-          {/* 8-pointed star */}
           <path
-            d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z"
-            fill="#eab308"
-            stroke="#ca8a04"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
+            d="M12 2 C12 7.8 7.8 12 2 12 C7.8 12 12 16.2 12 22 C12 16.2 16.2 12 22 12 C16.2 12 12 7.8 12 2 Z"
+            fill="#ffffff"
           />
-          <circle cx="12" cy="11" r="2.5" fill="#fef08a" />
         </svg>
       </div>
     );
   }
 
   return (
-    <div className={`relative flex items-center justify-center ${className}`}>
-      {/* Outer soft glow */}
-      <div className="absolute w-7 h-7 rounded-full bg-amber-300/40 blur-sm pointer-events-none" />
-      
-      {/* Crisp glowing bulb */}
+    <div className={`relative flex items-center justify-center w-full h-full p-2 select-none pointer-events-none ${className}`}>
+      {/* Soft pure white subtle ambient halo */}
+      <div className="absolute w-[70%] h-[70%] rounded-full bg-white/25 blur-sm pointer-events-none" />
+
+      {/* Large Pure White Minimalist Solid Circle */}
       <svg
         viewBox="0 0 24 24"
-        className="w-6 h-6 drop-shadow-[0_0_6px_rgba(253,224,71,0.8)]"
+        className="w-[66%] h-[66%] max-w-[38px] max-h-[38px] drop-shadow-[0_2px_5px_rgba(0,0,0,0.55)] transition-transform duration-150 transform hover:scale-105"
       >
-        {/* Bulb dome */}
-        <circle
-          cx="12"
-          cy="10"
-          r="6.5"
-          fill="#fef08a"
-          stroke="#eab308"
-          strokeWidth="1.5"
-        />
-        {/* Filament coil */}
-        <path
-          d="M10 10c0-1.1.9-2 2-2s2 .9 2 2c0 .8-.5 1.5-1.2 1.8v1.2h-1.6v-1.2c-.7-.3-1.2-1-1.2-1.8z"
-          fill="#ca8a04"
-        />
-        {/* Base cap */}
-        <path
-          d="M9.5 16.5h5v2a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-2z"
-          fill="#78716c"
-        />
+        <circle cx="12" cy="12" r="8" fill="#ffffff" />
       </svg>
     </div>
   );
