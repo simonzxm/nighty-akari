@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import {
-  X,
-  Languages,
-  Calendar,
-  Sparkles,
-  Copy,
-  Check,
-  RotateCcw,
-} from 'lucide-react';
+import { X, Languages, Calendar, RotateCcw, Copy, Check } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { PuzzleDefinition } from '../engine/types';
 import { PuzzleRecord } from '../utils/storage';
@@ -40,7 +32,6 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
   const { lang, setLang, t } = useI18n();
   const [copied, setCopied] = useState(false);
 
-  // Trigger confetti on win
   useEffect(() => {
     if (isOpen && isWon) {
       try {
@@ -99,24 +90,17 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
       ? t.difficultyMedium
       : t.difficultyHard;
 
-  const difficultyColor =
-    puzzle.difficulty === 'easy'
-      ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-      : puzzle.difficulty === 'medium'
-      ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-      : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-xs sm:max-w-sm bg-[#0c0c0f] border border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-2xl text-center text-zinc-100 relative shadow-black/80 flex flex-col">
-        {/* Top Control Bar: Language & Close */}
-        <div className="flex items-center justify-between pb-2 -mt-1 -mx-1">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+      <div className="w-full max-w-xs bg-[#0f0f12] rounded-3xl p-6 sm:p-7 shadow-2xl text-center text-zinc-100 relative flex flex-col">
+        {/* Top Control Bar: Lang & Close without borders */}
+        <div className="flex items-center justify-between pb-2">
           <button
             type="button"
             onClick={toggleLanguage}
             title={t.language}
             aria-label={t.language}
-            className="px-2.5 py-1 text-xs font-mono font-medium text-zinc-400 hover:text-white rounded-lg transition-colors flex items-center gap-1 hover:bg-zinc-800/80 cursor-pointer"
+            className="text-xs font-mono text-zinc-500 hover:text-white transition-colors flex items-center gap-1 cursor-pointer py-1 px-1.5"
           >
             <Languages className="w-3.5 h-3.5" />
             <span>{lang === 'en' ? '中' : 'EN'}</span>
@@ -126,62 +110,37 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={t.close}
-            className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors hover:bg-zinc-800/80 cursor-pointer"
+            className="p-1 text-zinc-500 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Unified Header: Icon, Number, Date, Difficulty (No titles or subtitles) */}
-        <div className="pt-1 pb-2">
-          <div className="w-12 h-12 rounded-full bg-white/5 border border-zinc-800 flex items-center justify-center mx-auto mb-3 text-white">
-            {isWon ? (
-              <Sparkles className="w-5 h-5 text-amber-300" />
-            ) : (
-              <span className="text-2xl leading-none">✦</span>
-            )}
-          </div>
-
-          <div className="text-xl font-bold tracking-tight text-white mb-1">
+        {/* Clean Header: Pure Star, Number, Date, Difficulty (No frames, no pills) */}
+        <div className="pt-2 pb-1">
+          <div className="text-3xl text-amber-300 mb-2 leading-none">✦</div>
+          <div className="text-2xl font-bold tracking-tight text-white mb-1">
             {t.dailyNo(puzzle.number)}
           </div>
-
-          <div className="text-xs text-zinc-400 font-mono mb-2.5">
-            {formatGameDate(puzzle.date, lang)}
-          </div>
-
-          {/* Difficulty badge */}
-          <div className="inline-block">
-            <span
-              className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${difficultyColor}`}
-            >
-              {difficultyText}
-            </span>
+          <div className="text-xs text-zinc-400 font-mono">
+            {formatGameDate(puzzle.date, lang)} · {difficultyText}
           </div>
         </div>
 
-        {/* Stats & Status Area (Clean typography without card boxes) */}
+        {/* Stats Section: Pure Typography, Zero Divider Lines */}
         {isWon ? (
-          <div className="pt-2 pb-4">
-            {/* Won Status Indicator */}
-            <div className="mt-1 mb-4">
+          <div className="pt-4 pb-2">
+            <div className="text-xs font-medium mb-4">
               {isOptimal ? (
-                <div className="text-xs text-amber-400 font-medium inline-flex items-center gap-1.5">
-                  <span>★</span>
-                  <span>{t.victoryOptimal}</span>
-                </div>
+                <span className="text-amber-400">★ {t.victoryOptimal}</span>
               ) : (
-                <div className="text-xs text-emerald-400 font-medium inline-flex items-center gap-1.5">
-                  <span>✓</span>
-                  <span>{t.victoryGood}</span>
-                </div>
+                <span className="text-emerald-400">✓ {t.victoryGood}</span>
               )}
             </div>
 
-            {/* Revealed Stats: Time & Moves (Optimal benchmark revealed only here) */}
-            <div className="flex items-center justify-center gap-8 py-3 my-2 border-y border-zinc-800/80">
+            <div className="flex justify-center gap-10 my-4">
               <div>
-                <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-0.5">
+                <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-1">
                   {t.timeLabel}
                 </div>
                 <div className="text-2xl font-mono font-semibold text-white">
@@ -189,10 +148,8 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
                 </div>
               </div>
 
-              <div className="w-px h-8 bg-zinc-800" />
-
               <div>
-                <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-0.5">
+                <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-1">
                   {t.movesLabel}
                 </div>
                 <div className="text-2xl font-mono font-semibold text-white">
@@ -204,15 +161,15 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
               </div>
             </div>
 
-            {/* Action Buttons: Copy Result & Play Again */}
-            <div className="space-y-2.5 mt-5">
+            {/* Actions */}
+            <div className="space-y-2 mt-6">
               <button
                 type="button"
                 onClick={handleCopy}
-                className={`w-full py-3 px-4 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2 select-none shadow-lg cursor-pointer ${
+                className={`w-full py-3 px-4 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 select-none cursor-pointer ${
                   copied
-                    ? 'bg-emerald-500 text-black shadow-emerald-500/20'
-                    : 'bg-white hover:bg-zinc-200 text-black shadow-white/10 active:scale-[0.98]'
+                    ? 'bg-emerald-500 text-black'
+                    : 'bg-white hover:bg-zinc-200 text-black active:scale-[0.98]'
                 }`}
               >
                 {copied ? (
@@ -234,7 +191,7 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
                   onRestart();
                   onClose();
                 }}
-                className="w-full py-2.5 px-4 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>{t.playAgain}</span>
@@ -242,30 +199,26 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
             </div>
           </div>
         ) : (
-          <div className="pt-2 pb-4">
-            {/* If previously completed, display past best record (no spoiler on optimal moves) */}
+          <div className="pt-4 pb-2">
             {record?.completed ? (
-              <div className="py-2.5 my-2 border-y border-zinc-800/80">
-                <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-1">
+              <div className="my-5 text-sm font-mono">
+                <span className="text-[11px] text-zinc-500 uppercase tracking-wider block mb-1">
                   {t.previouslySolved}
-                </div>
-                <div className="font-mono text-sm text-zinc-200 flex items-center justify-center gap-1.5">
-                  {record.moves <= puzzle.optimalMoves ? (
-                    <span className="text-amber-400 font-semibold inline-flex items-center gap-1">
-                      <span>★</span> {record.moves} {lang === 'zh' ? '步' : 'moves'}
-                    </span>
-                  ) : (
-                    <span className="text-emerald-400 font-semibold inline-flex items-center gap-1">
-                      <span>✓</span> {record.moves} {lang === 'zh' ? '步' : 'moves'}
-                    </span>
-                  )}
-                </div>
+                </span>
+                {record.moves <= puzzle.optimalMoves ? (
+                  <span className="text-amber-400 font-semibold">
+                    ★ {record.moves} {lang === 'zh' ? '步' : 'moves'}
+                  </span>
+                ) : (
+                  <span className="text-emerald-400 font-semibold">
+                    ✓ {record.moves} {lang === 'zh' ? '步' : 'moves'}
+                  </span>
+                )}
               </div>
             ) : moves > 0 ? (
-              /* In progress stats */
-              <div className="flex items-center justify-center gap-8 py-3 my-2 border-y border-zinc-800/80">
+              <div className="flex justify-center gap-10 my-4">
                 <div>
-                  <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-0.5">
+                  <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-1">
                     {t.timeLabel}
                   </div>
                   <div className="text-2xl font-mono font-semibold text-white">
@@ -273,10 +226,8 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
                   </div>
                 </div>
 
-                <div className="w-px h-8 bg-zinc-800" />
-
                 <div>
-                  <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-0.5">
+                  <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-1">
                     {t.movesLabel}
                   </div>
                   <div className="text-2xl font-mono font-semibold text-white">
@@ -288,12 +239,12 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
               <div className="h-6" />
             )}
 
-            {/* Action Buttons: Play / Resume (and Restart if moves > 0) */}
-            <div className="space-y-2 mt-4">
+            {/* Actions */}
+            <div className="space-y-2 mt-6">
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-zinc-200 text-black font-semibold text-sm transition-all select-none shadow-lg shadow-white/10 active:scale-[0.98] cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-sm transition-all select-none active:scale-[0.98] cursor-pointer"
               >
                 {moves > 0 ? t.resume : t.play}
               </button>
@@ -305,7 +256,7 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
                     onRestart();
                     onClose();
                   }}
-                  className="w-full py-2.5 px-4 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 border border-zinc-800 font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl text-zinc-500 hover:text-rose-400 hover:bg-white/5 font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>{t.restart}</span>
@@ -315,15 +266,15 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
           </div>
         )}
 
-        {/* Modal Bottom: Archive Entrance */}
-        <div className="mt-3 pt-3 border-t border-zinc-800/80">
+        {/* Modal Bottom: Clean Archive text button, NO divider line */}
+        <div className="mt-4 pt-2">
           <button
             type="button"
             onClick={() => {
               onClose();
               onOpenArchive();
             }}
-            className="w-full py-2 px-3 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-medium rounded-xl border border-zinc-800 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full py-2 text-zinc-500 hover:text-white text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5" />
             <span>{t.archive}</span>
