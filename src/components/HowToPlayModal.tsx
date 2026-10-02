@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Sun, CornerDownRight, ShieldAlert, Sparkles, Trophy, Flame } from 'lucide-react';
+import { X, Sun, CornerDownRight, ShieldAlert, Sparkles, Flame } from 'lucide-react';
 import { useI18n } from '../i18n';
 
 interface HowToPlayModalProps {
@@ -37,11 +37,6 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
       icon: <Sparkles className="w-4 h-4 text-white shrink-0" />,
       title: t.rule5Title,
       desc: t.rule5Desc,
-    },
-    {
-      icon: <Trophy className="w-4 h-4 text-amber-400 shrink-0" />,
-      title: t.rule6Title,
-      desc: t.rule6Desc,
     },
   ];
 

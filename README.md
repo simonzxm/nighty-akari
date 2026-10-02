@@ -4,12 +4,12 @@ A minimalist daily light relay puzzle inspired by Daily Akari's clean, pitch-bla
 
 ## Game Rules
 
-1. **Light Beams**: Lights cast rays horizontally and vertically across white squares until blocked by a dark wall or grid edge.
-2. **Relay Placement**: You can only place a new light on an already illuminated square. Lights can shine through each other.
-3. **Wall Capacity**: Numbers on dark blocks indicate exactly how many lights must shine directly into that block. Light rays hitting that block can **never** exceed this limit.
-4. **Extinguish & Scaffold**: Click any existing light to extinguish it. Use temporary lights to reach far corners, then extinguish them to free up wall capacity for subsequent paths.
-5. **Initial Seed Light**: The star-marked bulb (✳) is permanent and cannot be extinguished.
-6. **Victory Condition**: Illuminate all white squares and satisfy all numbered blocks simultaneously.
+1. **Light Beams**: Lamps cast straight beams horizontally and vertically across white squares until blocked by a dark wall or grid edge. Beams pass through other lamps.
+2. **Borrowing Light**: You can only place a new lamp on a square that is currently illuminated. Use existing light to relay into the darkness.
+3. **Block Limits & Targets**: The number on a dark block is the total count of light beams shining into it (from all lamps in its row and column). Beams hitting a block can **never** exceed this number at any point, and must exactly match it to win.
+4. **Extinguish & Scaffold**: Click any existing lamp to extinguish it, reclaiming beams and freeing block capacity. Place temporary lamps to reach distant areas, then extinguish them once new footholds are established.
+5. **Initial Seed Star**: The pure white star (✦) is permanent and cannot be extinguished.
+6. **Victory Condition**: Illuminate all white squares while ensuring all numbered blocks are satisfied simultaneously.
 
 ## Controls
 
