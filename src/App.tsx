@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Info, HelpCircle, RotateCcw, Undo2 } from 'lucide-react';
 import { I18nProvider, useI18n } from './i18n';
-import { getDailyPuzzle } from './utils/daily';
+import { loadPuzzle } from './data/puzzles';
 import { buildBoard, inspectBoard, tryToggleLight } from './engine/core';
-import { PuzzleDefinition } from './engine/types';
+import type { PuzzleDefinition, PuzzleIndexEntry } from './engine/types';
 import {
   loadAllRecords,
   savePuzzleRecord,
@@ -19,11 +19,14 @@ import { ArchiveModal } from './components/ArchiveModal';
 import { HowToPlayModal } from './components/HowToPlayModal';
 import { ResetConfirmModal } from './components/ResetConfirmModal';
 
-const GameMain: React.FC = () => {
+type AppProps = { initialPuzzle: PuzzleDefinition };
+
+const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
   const { t } = useI18n();
 
   // Active puzzle
-  const [currentPuzzle, setCurrentPuzzle] = useState<PuzzleDefinition>(() => getDailyPuzzle()!);
+  const [currentPuzzle, setCurrentPuzzle] = useState<PuzzleDefinition>(initialPuzzle);
+  const selectionRequest = useRef(0);
   const model = useMemo(() => buildBoard(currentPuzzle), [currentPuzzle]);
 
   // Board state & history
@@ -76,9 +79,18 @@ const GameMain: React.FC = () => {
   const inspection = useMemo(() => inspectBoard(model, state), [model, state]);
 
   // Switch puzzle from archive
-  const switchPuzzle = useCallback((newPuzzle: PuzzleDefinition) => {
-    setCurrentPuzzle(newPuzzle);
+  const switchPuzzle = useCallback(async (entry: PuzzleIndexEntry) => {
+    const request = ++selectionRequest.current;
+    let newPuzzle: PuzzleDefinition;
+    try {
+      newPuzzle = await loadPuzzle(entry);
+    } catch (error) {
+      console.error('Unable to load selected puzzle:', error);
+      return;
+    }
+    if (request !== selectionRequest.current) return;
     const newModel = buildBoard(newPuzzle);
+    setCurrentPuzzle(newPuzzle);
     const saved = loadSavedGameState(newPuzzle.id);
 
     if (saved) {
@@ -330,10 +342,10 @@ const GameMain: React.FC = () => {
   );
 };
 
-export const App: React.FC = () => {
+export const App: React.FC<AppProps> = ({ initialPuzzle }) => {
   return (
     <I18nProvider>
-      <GameMain />
+      <GameMain initialPuzzle={initialPuzzle} />
     </I18nProvider>
   );
 };

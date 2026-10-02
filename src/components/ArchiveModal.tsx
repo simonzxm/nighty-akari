@@ -1,8 +1,8 @@
 import React from 'react';
 import { X, Moon } from 'lucide-react';
 import { useI18n } from '../i18n';
-import { DAILY_PUZZLES } from '../data/puzzles';
-import { PuzzleDefinition } from '../engine/types';
+import { PUZZLE_INDEX } from '../data/puzzles';
+import type { PuzzleIndexEntry, PuzzleMetadata } from '../engine/types';
 import { PuzzleRecord } from '../utils/storage';
 import { formatGameDate, getTodayDateString } from '../utils/daily';
 
@@ -10,7 +10,7 @@ interface ArchiveModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentPuzzleId: number;
-  onSelectPuzzle: (puzzle: PuzzleDefinition) => void;
+  onSelectPuzzle: (puzzle: PuzzleIndexEntry) => Promise<void>;
   records: Record<number, PuzzleRecord>;
 }
 
@@ -28,13 +28,13 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
   const todayStr = getTodayDateString();
 
   // Development shows all authored puzzles; production shows released puzzles only.
-  const availablePuzzles = DAILY_PUZZLES.filter(
+  const availablePuzzles = PUZZLE_INDEX.filter(
     (p) => import.meta.env.DEV || p.date <= todayStr
   ).sort((a, b) => b.id - a.id);
 
   const totalCompleted = availablePuzzles.filter((p) => Boolean(records[p.id])).length;
 
-  const getDifficultyText = (diff: PuzzleDefinition['difficulty']) => {
+  const getDifficultyText = (diff: PuzzleMetadata['difficulty']) => {
     switch (diff) {
       case 'easy':
         return t.difficultyEasy;
@@ -93,10 +93,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
               <button
                 key={puzzle.id}
                 type="button"
-                onClick={() => {
-                  onSelectPuzzle(puzzle);
-                  onClose();
-                }}
+                onClick={() => { void onSelectPuzzle(puzzle); }}
                 className={`w-full px-3.5 py-3 rounded-2xl flex flex-col gap-1 text-left transition-all cursor-pointer select-none ${
                   isCurrent
                     ? 'bg-white/10 ring-1 ring-white/15 text-white'

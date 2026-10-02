@@ -1,5 +1,5 @@
-import { DAILY_PUZZLES } from '../data/puzzles';
-import { PuzzleDefinition } from '../engine/types';
+import { PUZZLE_INDEX } from '../data/puzzles';
+import type { PuzzleIndexEntry } from '../engine/types';
 
 export function getTodayDateString(d: Date = new Date()): string {
   const y = d.getFullYear();
@@ -8,10 +8,10 @@ export function getTodayDateString(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-export function getDailyPuzzle(targetDate: Date = new Date()): PuzzleDefinition | undefined {
+export function getDailyPuzzle(targetDate: Date = new Date()): PuzzleIndexEntry | undefined {
   const today = getTodayDateString(targetDate);
-  const released = DAILY_PUZZLES.filter(p => p.date <= today);
-  return released.at(-1) ?? (import.meta.env.DEV ? DAILY_PUZZLES[0] : undefined);
+  const released = PUZZLE_INDEX.filter(p => p.date <= today);
+  return released.at(-1) ?? (import.meta.env.DEV ? PUZZLE_INDEX[0] : undefined);
 }
 
 export function formatGameDate(dateStr: string, lang: 'en' | 'zh'): string {

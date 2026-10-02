@@ -1,15 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { loadPuzzles } from './data/puzzles';
+import { loadPuzzleIndex, loadPuzzle } from './data/puzzles';
 import { getDailyPuzzle } from './utils/daily';
 import './index.css';
 
-loadPuzzles().then(() => {
-  if (!getDailyPuzzle()) return;
+async function startGame(): Promise<void> {
+  await loadPuzzleIndex();
+  const daily = getDailyPuzzle();
+  if (!daily) return;
+  const initialPuzzle = await loadPuzzle(daily);
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <App />
+      <App initialPuzzle={initialPuzzle} />
     </React.StrictMode>
   );
-}).catch(error => console.error('Unable to load puzzles:', error));
+}
+
+startGame().catch(error => console.error('Unable to load puzzles:', error));
