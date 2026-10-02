@@ -3,16 +3,7 @@ import { PuzzleDefinition } from '../engine/types';
 
 export const DAILY_PUZZLES: PuzzleDefinition[] = [
   {
-    "id": "p-001",
-    "number": 1,
-    "name": {
-      "en": "Borrow Light",
-      "zh": "借光"
-    },
-    "subtitle": {
-      "en": "Lighting the corners",
-      "zh": "借光启程"
-    },
+    "id": 1,
     "date": "2026-10-01",
     "rows": [
       "...10",
@@ -29,16 +20,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "easy"
   },
   {
-    "id": "p-002",
-    "number": 2,
-    "name": {
-      "en": "The Bridge",
-      "zh": "过桥"
-    },
-    "subtitle": {
-      "en": "Temporary scaffolds",
-      "zh": "搭建临时通道"
-    },
+    "id": 2,
     "date": "2026-10-02",
     "rows": [
       "...#1",
@@ -55,16 +37,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "medium"
   },
   {
-    "id": "p-003",
-    "number": 3,
-    "name": {
-      "en": "Relay",
-      "zh": "交接"
-    },
-    "subtitle": {
-      "en": "Release wall limits",
-      "zh": "释放黑块容量"
-    },
+    "id": 3,
     "date": "2026-10-03",
     "rows": [
       "0##..",
@@ -81,16 +54,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "hard"
   },
   {
-    "id": "p-004",
-    "number": 4,
-    "name": {
-      "en": "Detour",
-      "zh": "绕行"
-    },
-    "subtitle": {
-      "en": "Curve around obstacles",
-      "zh": "避开正面阻截"
-    },
+    "id": 4,
     "date": "2026-10-04",
     "rows": [
       "...4.",
@@ -107,16 +71,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "medium"
   },
   {
-    "id": "p-005",
-    "number": 5,
-    "name": {
-      "en": "Flicker",
-      "zh": "微光"
-    },
-    "subtitle": {
-      "en": "A faint gleam",
-      "zh": "黑暗中的光点"
-    },
+    "id": 5,
     "date": "2026-10-05",
     "rows": [
       ".....",
@@ -133,16 +88,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "medium"
   },
   {
-    "id": "p-006",
-    "number": 6,
-    "name": {
-      "en": "Crossroads",
-      "zh": "十字路"
-    },
-    "subtitle": {
-      "en": "Perpendicular beams",
-      "zh": "纵横交错"
-    },
+    "id": 6,
     "date": "2026-10-06",
     "rows": [
       "..1..",
@@ -159,16 +105,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "medium"
   },
   {
-    "id": "p-007",
-    "number": 7,
-    "name": {
-      "en": "Scaffolding",
-      "zh": "脚手架"
-    },
-    "subtitle": {
-      "en": "Build and dismantle",
-      "zh": "建起再拆除"
-    },
+    "id": 7,
     "date": "2026-10-07",
     "rows": [
       "....3",
@@ -185,16 +122,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "easy"
   },
   {
-    "id": "p-008",
-    "number": 8,
-    "name": {
-      "en": "Night Corridor",
-      "zh": "夜廊"
-    },
-    "subtitle": {
-      "en": "A winding path",
-      "zh": "幽长回廊"
-    },
+    "id": 8,
     "date": "2026-10-08",
     "rows": [
       ".4...",
@@ -211,16 +139,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "medium"
   },
   {
-    "id": "p-009",
-    "number": 9,
-    "name": {
-      "en": "Beacon",
-      "zh": "灯塔"
-    },
-    "subtitle": {
-      "en": "Guide the ship home",
-      "zh": "指引归航"
-    },
+    "id": 9,
     "date": "2026-10-09",
     "rows": [
       "15...",
@@ -237,16 +156,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "medium"
   },
   {
-    "id": "p-010",
-    "number": 10,
-    "name": {
-      "en": "Prism",
-      "zh": "棱镜"
-    },
-    "subtitle": {
-      "en": "Splitting directions",
-      "zh": "折射与汇聚"
-    },
+    "id": 10,
     "date": "2026-10-10",
     "rows": [
       ".0...",
@@ -263,16 +173,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "easy"
   },
   {
-    "id": "p-011",
-    "number": 11,
-    "name": {
-      "en": "Sanctuary",
-      "zh": "庇护所"
-    },
-    "subtitle": {
-      "en": "Safe illumination",
-      "zh": "安稳的明亮"
-    },
+    "id": 11,
     "date": "2026-10-11",
     "rows": [
       ".....",
@@ -289,16 +190,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "medium"
   },
   {
-    "id": "p-012",
-    "number": 12,
-    "name": {
-      "en": "Starlight",
-      "zh": "星辉"
-    },
-    "subtitle": {
-      "en": "Distant beacons",
-      "zh": "遥遥相望"
-    },
+    "id": 12,
     "date": "2026-10-12",
     "rows": [
       ".#2..",
@@ -315,16 +207,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "easy"
   },
   {
-    "id": "p-013",
-    "number": 13,
-    "name": {
-      "en": "Nightfall",
-      "zh": "暮色"
-    },
-    "subtitle": {
-      "en": "Before complete darkness",
-      "zh": "夜幕降临前"
-    },
+    "id": 13,
     "date": "2026-10-13",
     "rows": [
       "..2.1",
@@ -341,16 +224,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "medium"
   },
   {
-    "id": "p-014",
-    "number": 14,
-    "name": {
-      "en": "Aurora",
-      "zh": "极光"
-    },
-    "subtitle": {
-      "en": "Curtain of light",
-      "zh": "天际微澜"
-    },
+    "id": 14,
     "date": "2026-10-14",
     "rows": [
       "#.3..",
@@ -367,16 +241,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "easy"
   },
   {
-    "id": "p-015",
-    "number": 15,
-    "name": {
-      "en": "Lantern Walk",
-      "zh": "提灯"
-    },
-    "subtitle": {
-      "en": "Patience in the dark",
-      "zh": "步履不停"
-    },
+    "id": 15,
     "date": "2026-10-15",
     "rows": [
       "..#..",
@@ -393,16 +258,7 @@ export const DAILY_PUZZLES: PuzzleDefinition[] = [
     "difficulty": "medium"
   },
   {
-    "id": "p-016",
-    "number": 16,
-    "name": {
-      "en": "Labyrinth",
-      "zh": "迷宫"
-    },
-    "subtitle": {
-      "en": "Every step counts",
-      "zh": "分毫不差"
-    },
+    "id": 16,
     "date": "2026-10-16",
     "rows": [
       "4....",

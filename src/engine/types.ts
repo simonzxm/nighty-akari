@@ -17,17 +17,8 @@ export type RayData = {
 };
 
 export type PuzzleDefinition = {
-  id: string;
-  name: {
-    en: string;
-    zh: string;
-  };
-  subtitle?: {
-    en: string;
-    zh: string;
-  };
+  id: number;
   date: string; // YYYY-MM-DD
-  number: number;
   rows: string[];
   seed: [number, number]; // [row, col], 1-indexed for easy reading in JSON
   optimalMoves: number;
@@ -35,7 +26,7 @@ export type PuzzleDefinition = {
 };
 
 export type BoardModel = {
-  id: string;
+  id: number;
   rows: string[];
   h: number;
   w: number;

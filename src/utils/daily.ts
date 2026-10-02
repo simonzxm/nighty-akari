@@ -26,8 +26,8 @@ export function getDailyPuzzle(targetDate: Date = new Date()): PuzzleDefinition 
   return DAILY_PUZZLES[idx];
 }
 
-export function getPuzzleByNumber(puzzleNum: number): PuzzleDefinition | undefined {
-  return DAILY_PUZZLES.find(p => p.number === puzzleNum);
+export function getPuzzleById(puzzleId: number): PuzzleDefinition | undefined {
+  return DAILY_PUZZLES.find(p => p.id === puzzleId);
 }
 
 export function formatGameDate(dateStr: string, lang: 'en' | 'zh'): string {
