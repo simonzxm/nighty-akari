@@ -19,6 +19,25 @@ export const Board: React.FC<BoardProps> = ({
 }) => {
   const [hoveredCellIndex, setHoveredCellIndex] = useState<number | null>(null);
 
+  const [supportsHover, setSupportsHover] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  });
+
+  useEffect(() => {
+    const mql = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const onChange = (e: MediaQueryListEvent) => {
+      setSupportsHover(e.matches);
+      if (!e.matches) {
+        setHoveredCellIndex(null);
+      }
+    };
+    mql.addEventListener?.('change', onChange);
+    return () => {
+      mql.removeEventListener?.('change', onChange);
+    };
+  }, []);
+
   const [isPortrait, setIsPortrait] = useState(() => {
     if (typeof window === 'undefined') return true;
     return window.innerHeight >= window.innerWidth;
@@ -46,12 +65,12 @@ export const Board: React.FC<BoardProps> = ({
   const visW = shouldRotate ? model.h : model.w;
   const visH = shouldRotate ? model.w : model.h;
 
-  // Compute preview details when a cell is hovered
+  // Compute preview details when a cell is hovered on devices with hover/fine pointer
   let previewLitMask = 0n;
   const previewViolatedWalls = new Set<number>();
   const previewAffectedWalls = new Set<number>();
 
-  if (hoveredCellIndex !== null && !isWon) {
+  if (supportsHover && hoveredCellIndex !== null && !isWon) {
     const ray = model.rays[hoveredCellIndex];
     if (ray) {
       previewLitMask = ray.litMask;
@@ -69,6 +88,25 @@ export const Board: React.FC<BoardProps> = ({
       }
     }
   }
+
+  const handleMouseEnter = (cellIdx: number) => {
+    if (supportsHover) {
+      setHoveredCellIndex(cellIdx);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (supportsHover) {
+      setHoveredCellIndex(null);
+    }
+  };
+
+  const handleToggle = (cellIdx: number) => {
+    if (!supportsHover) {
+      setHoveredCellIndex(null);
+    }
+    onToggleCell(cellIdx);
+  };
 
   const wGaps = Math.max(0, visW - 1);
   const hGaps = Math.max(0, visH - 1);
@@ -104,8 +142,8 @@ export const Board: React.FC<BoardProps> = ({
               const hasBulb = (state & bit) !== 0n;
               const isLit = (inspection.litMask & bit) !== 0n;
               const isSeed = cellIdx === model.seedIndex;
-              const isInPreview = (previewLitMask & bit) !== 0n;
-              const isHovered = hoveredCellIndex === cellIdx;
+              const isInPreview = supportsHover && (previewLitMask & bit) !== 0n;
+              const isHovered = supportsHover && hoveredCellIndex === cellIdx;
 
               return (
                 <WhiteCell
@@ -119,9 +157,9 @@ export const Board: React.FC<BoardProps> = ({
                   isInPreviewRay={isInPreview}
                   isHovered={isHovered}
                   canPlace={isLit && !hasBulb}
-                  onClick={() => onToggleCell(cellIdx)}
-                  onMouseEnter={() => setHoveredCellIndex(cellIdx)}
-                  onMouseLeave={() => setHoveredCellIndex(null)}
+                  onClick={() => handleToggle(cellIdx)}
+                  onMouseEnter={() => handleMouseEnter(cellIdx)}
+                  onMouseLeave={handleMouseLeave}
                 />
               );
             }

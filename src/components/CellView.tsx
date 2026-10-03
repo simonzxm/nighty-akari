@@ -81,8 +81,6 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onFocus={onMouseEnter}
-      onBlur={onMouseLeave}
       className={`relative w-full h-full aspect-square rounded-md sm:rounded-lg transition-all duration-150 flex items-center justify-center select-none outline-none ${cursorClass} ${bgClass}`}
     >
       {/* Placed Lamp / Celestial Moon */}
