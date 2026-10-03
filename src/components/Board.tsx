@@ -43,15 +43,25 @@ export const Board: React.FC<BoardProps> = ({
     }
   }
 
+  const wGaps = Math.max(0, model.w - 1);
+  const hGaps = Math.max(0, model.h - 1);
+  const cellW = `calc((var(--max-board-w) - 2 * var(--board-pad) - ${wGaps} * var(--board-gap)) / ${model.w})`;
+  const cellH = `calc((var(--max-board-h) - 2 * var(--board-pad) - ${hGaps} * var(--board-gap)) / ${model.h})`;
+
   return (
-    <div className="flex flex-col items-center justify-center w-full px-4 py-6">
+    <div className="flex items-center justify-center">
       <div
-        className={`grid gap-1 sm:gap-1.5 w-full max-w-[400px] aspect-square bg-[#0e0f16] p-1.5 sm:p-2 rounded-2xl border border-zinc-800/80 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] transition-all duration-500 ${
+        className={`grid akari-board bg-[#0e0f16] rounded-2xl border border-zinc-800/80 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] transition-all duration-500 ${
           isWon ? 'animate-victory-glow ring-1 ring-amber-400/40' : ''
         }`}
         style={{
-          gridTemplateColumns: `repeat(${model.w}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${model.h}, minmax(0, 1fr))`,
+          ['--cell-size' as string]: `min(${cellW}, ${cellH}, 76px)`,
+          gridTemplateColumns: `repeat(${model.w}, var(--cell-size))`,
+          gridTemplateRows: `repeat(${model.h}, var(--cell-size))`,
+          gap: 'var(--board-gap)',
+          padding: 'var(--board-pad)',
+          width: 'fit-content',
+          height: 'fit-content',
         }}
       >
         {Array.from({ length: model.h }).map((_, r) =>

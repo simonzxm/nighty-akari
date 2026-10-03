@@ -81,7 +81,7 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
       onMouseLeave={onMouseLeave}
       onFocus={onMouseEnter}
       onBlur={onMouseLeave}
-      className={`relative aspect-square rounded-md sm:rounded-lg transition-all duration-150 flex items-center justify-center select-none outline-none ${cursorClass} ${bgClass}`}
+      className={`relative w-full h-full aspect-square rounded-md sm:rounded-lg transition-all duration-150 flex items-center justify-center select-none outline-none ${cursorClass} ${bgClass}`}
     >
       {/* Placed Lamp / Celestial Moon */}
       {hasBulb && (
@@ -130,10 +130,13 @@ export const WallCell: React.FC<WallCellProps> = ({
       aria-label={`Wall at row ${wall.r + 1}, col ${wall.c + 1}${
         isNumbered ? `, target ${target}, current ${currentCount}` : ', solid obstacle'
       }`}
-      className={`relative aspect-square rounded-md sm:rounded-lg select-none flex items-center justify-center font-mono transition-colors duration-150 ${bgStyle} ${textStyle}`}
+      className={`relative w-full h-full aspect-square rounded-md sm:rounded-lg select-none flex items-center justify-center font-mono transition-colors duration-150 ${bgStyle} ${textStyle}`}
     >
       {isNumbered ? (
-        <span className="select-none text-xl sm:text-2xl leading-none tracking-tight">
+        <span
+          style={{ fontSize: 'clamp(1.125rem, calc(var(--cell-size) * 0.42), 1.625rem)' }}
+          className="select-none leading-none tracking-tight"
+        >
           {wall.value}
         </span>
       ) : (

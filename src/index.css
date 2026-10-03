@@ -91,3 +91,23 @@
 .animate-victory-glow {
   animation: victoryRadiance 3s ease-in-out infinite;
 }
+
+/* Board responsive sizing for square & non-square puzzles */
+.akari-board {
+  --board-gap: 4px;
+  --board-pad: 6px;
+  --max-board-w: min(400px, calc(100vw - 2.5rem));
+  --max-board-h: min(480px, calc(100vh - 8.5rem));
+  --max-board-h: min(480px, calc(100dvh - 8.5rem));
+}
+
+@media (min-width: 640px) {
+  .akari-board {
+    --board-gap: 6px;
+    --board-pad: 8px;
+    --max-board-w: min(420px, calc(100vw - 3rem));
+    --max-board-h: min(500px, calc(100vh - 8.5rem));
+    --max-board-h: min(500px, calc(100dvh - 8.5rem));
+  }
+}
+
