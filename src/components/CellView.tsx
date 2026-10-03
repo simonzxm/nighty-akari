@@ -22,6 +22,8 @@ interface WallCellProps {
   wallIndex: number;
   currentCount: number;
   previewViolated: boolean;
+  r?: number;
+  c?: number;
 }
 
 export const WhiteCell: React.FC<WhiteCellProps> = ({
@@ -105,11 +107,16 @@ export const WallCell: React.FC<WallCellProps> = ({
   wall,
   currentCount,
   previewViolated,
+  r,
+  c,
 }) => {
   const isNumbered = wall.value !== '#';
   const target = isNumbered ? Number(wall.value) : -1;
   const isSatisfied = isNumbered && currentCount === target;
   const isViolated = isNumbered && currentCount > target;
+
+  const displayR = r !== undefined ? r : wall.r;
+  const displayC = c !== undefined ? c : wall.c;
 
   // Obsidian wall block styling with inset depth
   let textStyle = 'text-zinc-100 font-bold';
@@ -127,7 +134,7 @@ export const WallCell: React.FC<WallCellProps> = ({
 
   return (
     <div
-      aria-label={`Wall at row ${wall.r + 1}, col ${wall.c + 1}${
+      aria-label={`Wall at row ${displayR + 1}, col ${displayC + 1}${
         isNumbered ? `, target ${target}, current ${currentCount}` : ', solid obstacle'
       }`}
       className={`relative w-full h-full aspect-square rounded-md sm:rounded-lg select-none flex items-center justify-center font-mono transition-colors duration-150 ${bgStyle} ${textStyle}`}

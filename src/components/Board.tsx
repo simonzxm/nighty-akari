@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BoardModel, BoardInspection } from '../engine/types';
 import { WhiteCell, WallCell } from './CellView';
 
@@ -18,6 +18,33 @@ export const Board: React.FC<BoardProps> = ({
   isWon,
 }) => {
   const [hoveredCellIndex, setHoveredCellIndex] = useState<number | null>(null);
+
+  const [isPortrait, setIsPortrait] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerHeight >= window.innerWidth;
+  });
+
+  useEffect(() => {
+    const update = () => {
+      setIsPortrait(window.innerHeight >= window.innerWidth);
+    };
+    window.addEventListener('resize', update);
+    const mql = window.matchMedia('(orientation: portrait)');
+    mql.addEventListener?.('change', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      mql.removeEventListener?.('change', update);
+    };
+  }, []);
+
+  const isNonSquare = model.w !== model.h;
+  // In portrait (height >= width), tall boards fit best: rotate if board is wide (w > h).
+  // In landscape (width > height), wide boards fit best: rotate if board is tall (h > w).
+  const shouldRotate =
+    isNonSquare && ((isPortrait && model.w > model.h) || (!isPortrait && model.h > model.w));
+
+  const visW = shouldRotate ? model.h : model.w;
+  const visH = shouldRotate ? model.w : model.h;
 
   // Compute preview details when a cell is hovered
   let previewLitMask = 0n;
@@ -43,10 +70,10 @@ export const Board: React.FC<BoardProps> = ({
     }
   }
 
-  const wGaps = Math.max(0, model.w - 1);
-  const hGaps = Math.max(0, model.h - 1);
-  const cellW = `calc((var(--max-board-w) - 2 * var(--board-pad) - ${wGaps} * var(--board-gap)) / ${model.w})`;
-  const cellH = `calc((var(--max-board-h) - 2 * var(--board-pad) - ${hGaps} * var(--board-gap)) / ${model.h})`;
+  const wGaps = Math.max(0, visW - 1);
+  const hGaps = Math.max(0, visH - 1);
+  const cellW = `calc((var(--max-board-w) - 2 * var(--board-pad) - ${wGaps} * var(--board-gap)) / ${visW})`;
+  const cellH = `calc((var(--max-board-h) - 2 * var(--board-pad) - ${hGaps} * var(--board-gap)) / ${visH})`;
 
   return (
     <div className="flex items-center justify-center">
@@ -56,16 +83,18 @@ export const Board: React.FC<BoardProps> = ({
         }`}
         style={{
           ['--cell-size' as string]: `min(${cellW}, ${cellH}, 76px)`,
-          gridTemplateColumns: `repeat(${model.w}, var(--cell-size))`,
-          gridTemplateRows: `repeat(${model.h}, var(--cell-size))`,
+          gridTemplateColumns: `repeat(${visW}, var(--cell-size))`,
+          gridTemplateRows: `repeat(${visH}, var(--cell-size))`,
           gap: 'var(--board-gap)',
           padding: 'var(--board-pad)',
           width: 'fit-content',
           height: 'fit-content',
         }}
       >
-        {Array.from({ length: model.h }).map((_, r) =>
-          Array.from({ length: model.w }).map((_, c) => {
+        {Array.from({ length: visH }).map((_, vr) =>
+          Array.from({ length: visW }).map((_, vc) => {
+            const r = shouldRotate ? model.h - 1 - vc : vr;
+            const c = shouldRotate ? vr : vc;
             const key = `${r},${c}`;
             const cellIdx = model.ix.get(key);
             const wallIdx = model.wi.get(key);
@@ -81,8 +110,8 @@ export const Board: React.FC<BoardProps> = ({
               return (
                 <WhiteCell
                   key={key}
-                  r={r}
-                  c={c}
+                  r={vr}
+                  c={vc}
                   cellIndex={cellIdx}
                   isLit={isLit}
                   hasBulb={hasBulb}
@@ -106,6 +135,8 @@ export const Board: React.FC<BoardProps> = ({
                   wallIndex={wallIdx}
                   currentCount={inspection.counts[wallIdx] || 0}
                   previewViolated={previewViolatedWalls.has(wallIdx)}
+                  r={vr}
+                  c={vc}
                 />
               );
             }

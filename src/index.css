@@ -111,3 +111,9 @@
   }
 }
 
+@media (orientation: landscape) {
+  .akari-board {
+    --max-board-w: min(540px, calc(100vw - 6rem));
+  }
+}
+
