@@ -32,8 +32,6 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
     (p) => import.meta.env.DEV || p.date <= todayStr
   ).sort((a, b) => b.id - a.id);
 
-  const totalCompleted = availablePuzzles.filter((p) => Boolean(records[p.id])).length;
-
   const getDifficultyText = (diff: PuzzleMetadata['difficulty']) => {
     switch (diff) {
       case 'easy':
@@ -58,15 +56,10 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
       <div className="w-full max-w-sm max-h-[80vh] bg-[#0f0f14] rounded-3xl p-5 sm:p-6 border border-zinc-800 shadow-2xl flex flex-col text-zinc-200 relative">
         {/* Header without dividers */}
         <div className="flex items-center justify-between pb-3">
-          <div className="flex items-baseline gap-2">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Moon className="w-4 h-4 text-amber-300 fill-amber-300/20 shrink-0" strokeWidth={1.75} />
-              <span>{t.archiveTitle}</span>
-            </h2>
-            <span className="text-xs text-zinc-400 font-mono">
-              {totalCompleted} / {availablePuzzles.length}
-            </span>
-          </div>
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <Moon className="w-4 h-4 text-amber-300 fill-amber-300/20 shrink-0" strokeWidth={1.75} />
+            <span>{t.archiveTitle}</span>
+          </h2>
 
           <button
             type="button"
