@@ -51,21 +51,29 @@ npm run puzzles:build -- --algorithm ida
 npm run puzzles:build -- --max-states 1000000 --timeout-seconds 300
 ```
 
-`--algorithm bfs|ida` selects the solver explicitly. `--max-states` and `--timeout-seconds` accept non-negative integers; `0` means unlimited. Computation can take a long time on large boards, and available memory/stack still impose practical limits. An incomplete calculation is not classified as unsolvable and cannot be published. Cached successful results are reused regardless of the new budget or algorithm. Delete `.puzzle-cache/` when you want to recalculate; cache does not resume interrupted searches.
+`--algorithm bfs|ida` selects the solver explicitly. `--max-states` and `--timeout-seconds` accept non-negative integers; `0` means unlimited. Computation can take a long time on large boards, and available memory/stack still impose practical limits. An incomplete calculation is not classified as unsolvable and cannot be published. Cached successful results are reused regardless of the new budget or algorithm. Delete `.puzzle-cache/` when you want to recalculate; cache does not resume interrupted searches. Exact solutions are keyed by `SOLVER_VERSION`; difficulty has its own `ANALYSIS_VERSION`, so rating changes reuse exact solutions and recompute ratings on every build.
 
-Difficulty is a deterministic heuristic:
+Difficulty combines estimated discovery effort with a smaller execution/planning component:
 
 ```text
-score = optimalMoves
-      + 2 × minimumExtinguishesAmongShortestSolutions
-      + max(0, ceil(whiteCells / 10) - 2)
+score = 2 × log2(discoveryEffort)
+      + 0.15 × optimalMoves
+      + 0.6 × minimumExtinguishesAmongShortestSolutions
+      + 0.5 × regressions
+      + 0.5 × planningDepth
 
-easy:   score < 15
-medium: 15 ≤ score < 30
-hard:   score ≥ 30
+easy:   score < 8
+medium: 8 ≤ score < 17
+hard:   score ≥ 17
 ```
 
-The score formula is unchanged; the authored cutoffs are 15 for medium and 30 for hard. These thresholds are not calibrated to measured player performance. The first three boards score 9, 13, and 15, so they remain easy, easy, and medium. The formula and analysis version live in `src/engine/difficulty.ts`; detailed metrics and a representative shortest path are in the local analysis report, not the published game JSON.
+The score is rounded to one decimal before classification. `discoveryEffort` is at least 1: the median number of unique states explored by eight deterministic, locally guided probes, divided by `optimalMoves + 1`. Probes prefer increasing illuminated area and satisfying numbered targets. They also apply basic final-lamp constraint propagation: a filled target excludes remaining lamps, a target that needs every remaining candidate forces them on, and an uncovered square with one remaining candidate forces that lamp on. These are **final-state** deductions; excluded lamps remain legal as temporary relays. Inferred final-lamp agreement is an additional move preference, not a legality constraint.
+
+Each probe uses a different row/column order and axis direction to resolve ties. It may backtrack and explore solutions up to `optimalMoves + max(6, ceil(optimalMoves / 2))` moves, with caps of 4,000 unique states and 16,000 visits. An unfinished probe records its explored count and unsuccessful status; it neither proves unsolvability nor affects the exact solver's result. Capped scores can underestimate especially difficult boards. `probeSolved` and `probeStates` in the report make this limitation visible.
+
+`regressions` counts moves in the representative shortest path that reduce combined visible progress (illuminated fraction plus mean positive-target completion). `planningDepth` is the longest interval without exceeding a previous progress peak. These are path-dependent proxies for temporary setbacks, not a mathematically proven minimum planning depth over all solutions. Extinguish count remains a modest signal because capacity changes can be difficult even when illumination is unchanged.
+
+The thresholds are fixed, not percentile-based: adding boards does not reclassify earlier boards. The heuristic was inspected against sampled authored boards, but has **not** been calibrated to measured player performance. The rating implementation lives in `src/engine/difficulty.ts`; detailed metrics, probe completion, and a representative shortest path remain in local `analysis.json`, not the published game JSON.
 
 ## Public R2 setup
 

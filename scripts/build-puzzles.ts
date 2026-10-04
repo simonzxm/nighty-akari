@@ -4,8 +4,8 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { buildBoard } from '../src/engine/core';
-import { solvePuzzle } from '../src/engine/solver';
-import { rateDifficulty, ANALYSIS_VERSION } from '../src/engine/difficulty';
+import { solvePuzzle, SOLVER_VERSION } from '../src/engine/solver';
+import { analyzeDifficulty, rateDifficulty, ANALYSIS_VERSION } from '../src/engine/difficulty';
 import type { PuzzleDefinition, PuzzleIndexEntry, PuzzleInput } from '../src/engine/types';
 
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -74,7 +74,7 @@ export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleIn
     const input: PuzzleInput = JSON.parse(await readFile(resolve(SOURCE, file), 'utf8'));
     const board = buildBoard({ ...input, id });
     const hash = createHash('sha256').update(JSON.stringify({
-      version: ANALYSIS_VERSION, rows: input.rows, seed: input.seed,
+      version: SOLVER_VERSION, rows: input.rows, seed: input.seed,
     })).digest('hex');
     const cachePath = resolve(CACHE, `${hash}.json`);
     const started = performance.now();
@@ -85,11 +85,8 @@ export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleIn
       throw new Error(`${file}: ${result.status} after ${result.visitedStates} states; nothing published`);
     }
     if (!cached) await writeJson(cachePath, result);
-    const rating = rateDifficulty({
-      optimalMoves: result.optimalMoves,
-      minExtinguishesAtOptimal: result.minExtinguishesAtOptimal,
-      whiteCells: board.cells.length,
-    });
+    const metrics = analyzeDifficulty(board, result);
+    const rating = rateDifficulty(metrics);
     const date = new Date(`${START_DATE}T00:00:00Z`);
     date.setUTCDate(date.getUTCDate() + index);
     puzzles.push({
@@ -97,10 +94,11 @@ export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleIn
       optimalMoves: result.optimalMoves, difficulty: rating.difficulty,
     });
     report.push({
-      file, id, score: rating.score, ...result,
+      file, id, score: rating.score, difficulty: rating.difficulty, ...result, ...metrics,
       whiteCells: board.cells.length, elapsedMs: Math.round(performance.now() - started), cached: Boolean(cached),
     });
     console.log(`  ${result.optimalMoves} moves, ${result.minExtinguishesAtOptimal} extinguishes, score ${rating.score}: ${rating.difficulty}`);
+    console.log(`  discovery ${metrics.discoveryEffort.toFixed(1)}x, planning ${metrics.planningDepth}, probes ${metrics.probeSolved}/8 solved`);
   }
 
   // Replace local output only after every source puzzle is fully analyzed.

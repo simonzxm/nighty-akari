@@ -1,6 +1,9 @@
 import type { BoardInspection, BoardModel } from './types';
 import { inspectBoard, transitionLight } from './core';
 
+/** Bump when exact solver results or their metrics change. */
+export const SOLVER_VERSION = 2;
+
 export type SolveOptions = {
   algorithm?: 'bfs' | 'ida';
   /** BFS: unique discovered states. IDA*: cumulative state visits across iterations. */
