@@ -39,9 +39,7 @@ async function publishPuzzles(): Promise<void> {
     credentials: { accessKeyId, secretAccessKey },
   });
   try {
-    // Fixed board URLs are overwritten first; publish the index only if every upload succeeds.
-    for (const key of [...index.map(puzzle => puzzle.file), 'index.json']) {
-      stage = `uploading ${key}`;
+    async function upload(key: string): Promise<void> {
       console.log(`[publish] Uploading ${key} to R2...`);
       const body = await readFile(resolve(GENERATED, key));
       await client.send(new PutObjectCommand({
@@ -52,6 +50,19 @@ async function publishPuzzles(): Promise<void> {
         CacheControl: 'no-cache,max-age=0,must-revalidate',
       }));
     }
+    // Upload up to 16 boards at a time; publish the index only if every upload succeeds.
+    for (let offset = 0; offset < index.length; offset += 16) {
+      const batch = index.slice(offset, offset + 16);
+      const results = await Promise.allSettled(batch.map(puzzle => upload(puzzle.file)));
+      for (const [position, result] of results.entries()) {
+        if (result.status === 'rejected') {
+          stage = `uploading ${batch[position].file}`;
+          throw result.reason;
+        }
+      }
+    }
+    stage = 'uploading index.json';
+    await upload('index.json');
   } finally {
     client.destroy();
   }
