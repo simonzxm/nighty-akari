@@ -123,7 +123,7 @@ export const Board: React.FC<BoardProps> = ({
   const cellH = `calc((var(--max-board-h) - 2 * var(--board-pad) - ${hGaps} * var(--board-gap)) / ${visH})`;
 
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex items-center justify-center animate-board-fade-in">
       <div
         className={`grid akari-board bg-[#0e0f16] rounded-2xl border border-zinc-800/80 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] transition-all duration-500 ${
           isWon ? 'animate-victory-glow ring-1 ring-amber-400/40' : ''

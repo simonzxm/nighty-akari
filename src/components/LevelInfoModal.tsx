@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { X, Languages, Calendar, RotateCcw, Copy, Check, Play, Moon } from 'lucide-react';
+import { X, Languages, Calendar, RotateCcw, Copy, Check, Play, Moon, Loader2 } from 'lucide-react';
 import { useI18n } from '../i18n';
-import { PuzzleDefinition } from '../engine/types';
+import { PuzzleMetadata } from '../engine/types';
 import { PuzzleRecord } from '../utils/storage';
 import { formatGameDate } from '../utils/daily';
 
 interface LevelInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  puzzle: PuzzleDefinition;
+  puzzle: PuzzleMetadata;
   isWon: boolean;
   hasStarted: boolean;
   onStart: () => void;
@@ -18,6 +18,10 @@ interface LevelInfoModalProps {
   record?: PuzzleRecord;
   onOpenArchive: () => void;
   onRestart: () => void;
+  isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
+  canClose?: boolean;
 }
 
 export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
@@ -32,6 +36,10 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
   record,
   onOpenArchive,
   onRestart,
+  isLoading = false,
+  isError = false,
+  onRetry,
+  canClose = true,
 }) => {
   const { lang, setLang, t } = useI18n();
   const [copied, setCopied] = useState(false);
@@ -117,14 +125,18 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
             <span>{lang === 'en' ? '中' : 'EN'}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t.close}
-            className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {canClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t.close}
+              className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          ) : (
+            <div className="w-7 h-7" />
+          )}
         </div>
 
         {/* Clean Header: Celestial Moon Icon, Number, Date, Difficulty */}
@@ -181,13 +193,29 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
 
           {/* Action Buttons: No restart buttons here */}
           <div className="space-y-2 mt-6">
-            {hasCompletedRecord ? (
+            {isLoading ? (
+              <button
+                type="button"
+                disabled
+                className="w-full h-11 rounded-xl bg-zinc-850/80 text-zinc-400 font-medium text-sm flex items-center justify-center cursor-wait select-none border border-zinc-700/40"
+              >
+                <Loader2 className="w-5 h-5 animate-spin text-amber-300" />
+              </button>
+            ) : isError ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="w-full h-11 rounded-xl bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-200 font-medium text-sm transition-all select-none active:scale-[0.98] cursor-pointer flex items-center justify-center border border-zinc-700/60"
+              >
+                <RotateCcw className="w-5 h-5 text-amber-300" />
+              </button>
+            ) : hasCompletedRecord ? (
               <>
                 {/* Copy Result Button */}
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className={`w-full py-3 px-4 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 select-none cursor-pointer ${
+                  className={`w-full h-11 px-4 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 select-none cursor-pointer ${
                     copied
                       ? 'bg-emerald-500 text-black'
                       : 'bg-white hover:bg-zinc-200 text-black active:scale-[0.98]'
@@ -235,7 +263,7 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
               <button
                 type="button"
                 onClick={onStart}
-                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-sm transition-all select-none active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                className="w-full h-11 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-sm transition-all select-none active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
                 <span>{hasStarted ? t.resume : t.play}</span>

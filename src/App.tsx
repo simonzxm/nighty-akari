@@ -3,7 +3,7 @@ import { Info, HelpCircle, RotateCcw, Undo2 } from 'lucide-react';
 import { I18nProvider, useI18n } from './i18n';
 import { loadPuzzle, PUZZLE_INDEX } from './data/puzzles';
 import { buildBoard, inspectBoard, tryToggleLight } from './engine/core';
-import type { PuzzleDefinition, PuzzleIndexEntry } from './engine/types';
+import type { BoardInspection, BoardModel, PuzzleDefinition, PuzzleIndexEntry } from './engine/types';
 import {
   loadAllRecords,
   savePuzzleRecord,
@@ -19,20 +19,40 @@ import { ArchiveModal } from './components/ArchiveModal';
 import { HowToPlayModal } from './components/HowToPlayModal';
 import { ResetConfirmModal } from './components/ResetConfirmModal';
 
-type AppProps = { initialPuzzle: PuzzleDefinition };
+export type AppProps = {
+  initialEntry: PuzzleIndexEntry;
+  initialPuzzle?: PuzzleDefinition;
+};
 
-const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
+const emptyInspection: BoardInspection = {
+  litMask: 0n,
+  counts: [],
+  valid: false,
+  won: false,
+  overloadedWalls: [],
+};
+
+const GameMain: React.FC<AppProps> = ({ initialEntry, initialPuzzle }) => {
   const { t } = useI18n();
 
-  // Active puzzle
-  const [currentPuzzle, setCurrentPuzzle] = useState<PuzzleDefinition>(initialPuzzle);
+  // Active puzzle & async state
+  const [activeEntry, setActiveEntry] = useState<PuzzleIndexEntry>(initialEntry);
+  const [currentPuzzle, setCurrentPuzzle] = useState<PuzzleDefinition | null>(initialPuzzle ?? null);
+  const [isLoading, setIsLoading] = useState<boolean>(!initialPuzzle);
+  const [isError, setIsError] = useState<boolean>(false);
   const selectionRequest = useRef(0);
-  const model = useMemo(() => buildBoard(currentPuzzle), [currentPuzzle]);
+
+  const model = useMemo<BoardModel | null>(
+    () => (currentPuzzle ? buildBoard(currentPuzzle) : null),
+    [currentPuzzle]
+  );
 
   // Validate the full saved game once so board, timer and history restore together.
-  const [initialSaved] = useState(() => loadSavedGameState(initialPuzzle, model));
+  const [initialSaved] = useState(() =>
+    initialPuzzle && model ? loadSavedGameState(initialPuzzle, model) : null
+  );
   const [state, setState] = useState<bigint>(() =>
-    initialSaved ? BigInt(initialSaved.stateHex) : model.initialState
+    initialSaved ? BigInt(initialSaved.stateHex) : (model?.initialState ?? 0n)
   );
   const [history, setHistory] = useState<Array<{ state: bigint; moves: number }>>(() =>
     initialSaved ? initialSaved.historyHex.map((hex, moves) => ({ state: BigInt(hex), moves })) : []
@@ -40,7 +60,9 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
   const [moves, setMoves] = useState<number>(initialSaved?.moves ?? 0);
   const [hasStarted, setHasStarted] = useState(initialSaved?.hasStarted ?? false);
   const [sessionActive, setSessionActive] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(() => Math.floor((initialSaved?.elapsedMs ?? 0) / 1000));
+  const [elapsedSeconds, setElapsedSeconds] = useState(() =>
+    Math.floor((initialSaved?.elapsedMs ?? 0) / 1000)
+  );
   const timer = useRef(createGameTimer(initialSaved?.hasStarted, initialSaved?.elapsedMs));
   const victoryHandled = useRef(false);
 
@@ -56,12 +78,29 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
   const rejectionTimeout = useRef<number | null>(null);
 
   // Board inspection
-  const inspection = useMemo(() => inspectBoard(model, state), [model, state]);
+  const inspection = useMemo(
+    () => (model ? inspectBoard(model, state) : emptyInspection),
+    [model, state]
+  );
 
   // Lifecycle callbacks and async puzzle loading always save the latest committed board.
-  const latestGame = useRef({ currentPuzzle, state, moves, history, won: inspection.won });
+  const latestGame = useRef<{
+    currentPuzzle: PuzzleDefinition | null;
+    state: bigint;
+    moves: number;
+    history: Array<{ state: bigint; moves: number }>;
+    won: boolean;
+  }>({
+    currentPuzzle,
+    state,
+    moves,
+    history,
+    won: inspection.won,
+  });
+
   const persistCurrentGame = useCallback(() => {
     const game = latestGame.current;
+    if (!game.currentPuzzle) return;
     if (game.won) {
       clearSavedGameState(game.currentPuzzle);
       return;
@@ -78,6 +117,7 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
   }, []);
 
   useLayoutEffect(() => {
+    if (!currentPuzzle || !model) return;
     latestGame.current = { currentPuzzle, state, moves, history, won: inspection.won };
     if (inspection.won && !victoryHandled.current) {
       victoryHandled.current = true;
@@ -90,49 +130,85 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
       setIsLevelInfoOpen(true);
     }
     persistCurrentGame();
-  }, [currentPuzzle, state, moves, history, inspection.won, hasStarted, sessionActive, persistCurrentGame]);
+  }, [currentPuzzle, model, state, moves, history, inspection.won, hasStarted, sessionActive, persistCurrentGame]);
 
-  // Switch only after loading succeeds; the previous puzzle keeps running while loading.
-  const switchPuzzle = useCallback(async (entry: PuzzleIndexEntry) => {
-    const request = ++selectionRequest.current;
-    let newPuzzle: PuzzleDefinition;
-    try {
-      newPuzzle = await loadPuzzle(entry);
-    } catch (error) {
-      console.error('Unable to load selected puzzle:', error);
-      return;
+  const loadActivePuzzle = useCallback(
+    async (entry: PuzzleIndexEntry) => {
+      const request = ++selectionRequest.current;
+      setIsLoading(true);
+      setIsError(false);
+
+      if (latestGame.current.currentPuzzle) {
+        pauseGameTimer(timer.current);
+        persistCurrentGame();
+      }
+
+      let newPuzzle: PuzzleDefinition;
+      try {
+        newPuzzle = await loadPuzzle(entry);
+      } catch (error) {
+        if (request === selectionRequest.current) {
+          console.error('Unable to load selected puzzle:', error);
+          setIsLoading(false);
+          setIsError(true);
+        }
+        return;
+      }
+
+      if (request !== selectionRequest.current) return;
+
+      const newModel = buildBoard(newPuzzle);
+      pauseGameTimer(timer.current);
+      const saved = loadSavedGameState(newPuzzle, newModel);
+      timer.current = createGameTimer(saved?.hasStarted, saved?.elapsedMs);
+      victoryHandled.current = false;
+      setCurrentPuzzle(newPuzzle);
+      setState(saved ? BigInt(saved.stateHex) : newModel.initialState);
+      setMoves(saved?.moves ?? 0);
+      setHasStarted(saved?.hasStarted ?? false);
+      setSessionActive(false);
+      setHistory(saved ? saved.historyHex.map((hex, moves) => ({ state: BigInt(hex), moves })) : []);
+      setElapsedSeconds(Math.floor((saved?.elapsedMs ?? 0) / 1000));
+      setRecords(loadAllRecords(PUZZLE_INDEX));
+      setRejection(null);
+      setIsLoading(false);
+      setIsError(false);
+    },
+    [persistCurrentGame]
+  );
+
+  // Initial load if initialPuzzle was not pre-provided
+  useEffect(() => {
+    if (!initialPuzzle) {
+      void loadActivePuzzle(initialEntry);
     }
-    if (request !== selectionRequest.current) return;
-    const newModel = buildBoard(newPuzzle);
-    pauseGameTimer(timer.current);
-    persistCurrentGame();
-    const saved = loadSavedGameState(newPuzzle, newModel);
-    timer.current = createGameTimer(saved?.hasStarted, saved?.elapsedMs);
-    victoryHandled.current = false;
-    setCurrentPuzzle(newPuzzle);
-    setState(saved ? BigInt(saved.stateHex) : newModel.initialState);
-    setMoves(saved?.moves ?? 0);
-    setHasStarted(saved?.hasStarted ?? false);
-    setSessionActive(false);
-    setHistory(saved ? saved.historyHex.map((hex, moves) => ({ state: BigInt(hex), moves })) : []);
-    setElapsedSeconds(Math.floor((saved?.elapsedMs ?? 0) / 1000));
-    setRecords(loadAllRecords(PUZZLE_INDEX));
-    setRejection(null);
-    setIsArchiveOpen(false);
-    setIsHowToPlayOpen(false);
-    setIsResetConfirmOpen(false);
-    setIsLevelInfoOpen(true);
-  }, [persistCurrentGame]);
+  }, [initialEntry, initialPuzzle, loadActivePuzzle]);
+
+  // Switch puzzle when selected from archive
+  const switchPuzzle = useCallback(
+    async (entry: PuzzleIndexEntry) => {
+      setIsArchiveOpen(false);
+      setIsHowToPlayOpen(false);
+      setIsResetConfirmOpen(false);
+      setIsLevelInfoOpen(true);
+      if (currentPuzzle?.id === entry.id && !isError) {
+        return;
+      }
+      setActiveEntry(entry);
+      await loadActivePuzzle(entry);
+    },
+    [currentPuzzle?.id, isError, loadActivePuzzle]
+  );
 
   const handleStart = useCallback(() => {
-    if (inspection.won) return;
+    if (isLoading || !model || inspection.won) return;
     timer.current.hasStarted = true;
     if (document.visibilityState === 'visible') resumeGameTimer(timer.current);
     setHasStarted(true);
     setSessionActive(true);
     setIsLevelInfoOpen(false);
     persistCurrentGame();
-  }, [inspection.won, persistCurrentGame]);
+  }, [inspection.won, isLoading, model, persistCurrentGame]);
 
   // In-game dialogs do not pause. Only leaving the page stops the active segment.
   useEffect(() => {
@@ -179,7 +255,7 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
   // Handle cell click / toggle
   const handleToggleCell = useCallback(
     (cellIndex: number) => {
-      if (inspection.won || !sessionActive || timer.current.runningSince === null) {
+      if (!model || inspection.won || !sessionActive || timer.current.runningSince === null) {
         setIsLevelInfoOpen(true);
         return;
       }
@@ -219,15 +295,16 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
 
   // Undo action
   const handleUndo = useCallback(() => {
-    if (history.length === 0 || inspection.won || !sessionActive || timer.current.runningSince === null) return;
+    if (!model || history.length === 0 || inspection.won || !sessionActive || timer.current.runningSince === null) return;
     const previous = history[history.length - 1];
     setHistory((prev) => prev.slice(0, -1));
     setState(previous.state);
     setMoves(previous.moves);
-  }, [history, inspection.won, sessionActive]);
+  }, [history, inspection.won, model, sessionActive]);
 
   // Resetting an unfinished board keeps its timer; a completed board starts a new round.
   const handleRestart = useCallback(() => {
+    if (!model || !currentPuzzle) return;
     setState(model.initialState);
     setHistory([]);
     setMoves(0);
@@ -242,7 +319,7 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
       setElapsedSeconds(0);
       setIsLevelInfoOpen(false);
     }
-  }, [inspection.won, model.initialState]);
+  }, [currentPuzzle, inspection.won, model]);
 
   // Keyboard controls
   useEffect(() => {
@@ -252,18 +329,22 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
       }
 
       if (e.key === 'Escape') {
-        setIsLevelInfoOpen(false);
+        if (!isLoading && currentPuzzle !== null) {
+          setIsLevelInfoOpen(false);
+        }
         setIsArchiveOpen(false);
         setIsHowToPlayOpen(false);
         setIsResetConfirmOpen(false);
       } else if (e.key === 'i' || e.key === 'I') {
-        setIsLevelInfoOpen((v) => !v);
+        if (!isLoading && currentPuzzle !== null) {
+          setIsLevelInfoOpen((v) => !v);
+        }
       } else if (e.key === '?') {
         setIsHowToPlayOpen((v) => !v);
       } else if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey || !e.shiftKey)) {
         handleUndo();
       } else if (e.key === 'r' || e.key === 'R') {
-        if (!e.ctrlKey && !e.metaKey) {
+        if (!e.ctrlKey && !e.metaKey && model !== null && !isLoading) {
           setIsResetConfirmOpen(true);
         }
       }
@@ -271,7 +352,7 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo]);
+  }, [currentPuzzle, handleUndo, isLoading, model]);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[#060608] bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.035)_0%,rgba(0,0,0,0)_65%)] text-zinc-100 flex flex-col items-center justify-center selection:bg-amber-400 selection:text-black">
@@ -302,9 +383,10 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
       <button
         type="button"
         onClick={() => setIsResetConfirmOpen(true)}
+        disabled={!model || isLoading}
         title={t.restart}
         aria-label={t.restart}
-        className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 p-2 text-zinc-400 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer bg-transparent border-0 outline-none select-none"
+        className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 p-2 text-zinc-400 hover:text-white active:scale-90 transition-all duration-150 disabled:opacity-25 disabled:hover:text-zinc-400 disabled:cursor-not-allowed cursor-pointer bg-transparent border-0 outline-none select-none"
       >
         <RotateCcw className="w-6 h-6 sm:w-7 sm:h-7 stroke-[1.75]" />
       </button>
@@ -313,7 +395,7 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
       <button
         type="button"
         onClick={handleUndo}
-        disabled={history.length === 0 || inspection.won || !sessionActive}
+        disabled={!model || isLoading || history.length === 0 || inspection.won || !sessionActive}
         title={t.undo}
         aria-label={t.undo}
         className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 p-2 text-zinc-400 hover:text-white active:scale-90 transition-all duration-150 disabled:opacity-25 disabled:hover:text-zinc-400 disabled:cursor-not-allowed cursor-pointer bg-transparent border-0 outline-none select-none"
@@ -323,39 +405,50 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
 
       {/* Center Board: Pure and text-free */}
       <main className="w-full h-full flex items-center justify-center p-4">
-        <Board
-          model={model}
-          state={state}
-          inspection={inspection}
-          onToggleCell={handleToggleCell}
-          isWon={inspection.won}
-          rejection={rejection}
-        />
+        {model && (
+          <Board
+            key={model.id}
+            model={model}
+            state={state}
+            inspection={inspection}
+            onToggleCell={handleToggleCell}
+            isWon={inspection.won}
+            rejection={rejection}
+          />
+        )}
       </main>
 
       {/* Unified Level Info & Settlement Modal */}
       <LevelInfoModal
         isOpen={isLevelInfoOpen}
-        onClose={() => setIsLevelInfoOpen(false)}
-        puzzle={currentPuzzle}
-        isWon={inspection.won}
-        hasStarted={hasStarted}
+        onClose={() => {
+          if (!isLoading && currentPuzzle !== null) {
+            setIsLevelInfoOpen(false);
+          }
+        }}
+        puzzle={isLoading ? activeEntry : (currentPuzzle ?? activeEntry)}
+        isWon={isLoading ? false : inspection.won}
+        hasStarted={isLoading ? false : hasStarted}
         onStart={handleStart}
-        moves={moves}
-        timeSeconds={elapsedSeconds}
-        record={records[currentPuzzle.id]}
+        moves={isLoading ? 0 : moves}
+        timeSeconds={isLoading ? 0 : elapsedSeconds}
+        record={records[activeEntry.id]}
         onOpenArchive={() => {
           setIsLevelInfoOpen(false);
           setIsArchiveOpen(true);
         }}
         onRestart={handleRestart}
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => void loadActivePuzzle(activeEntry)}
+        canClose={!isLoading && currentPuzzle !== null}
       />
 
       {/* Archive Modal */}
       <ArchiveModal
         isOpen={isArchiveOpen}
         onClose={() => setIsArchiveOpen(false)}
-        currentPuzzleId={currentPuzzle.id}
+        currentPuzzleId={activeEntry.id}
         onSelectPuzzle={switchPuzzle}
         records={records}
       />
@@ -377,10 +470,10 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
   );
 };
 
-export const App: React.FC<AppProps> = ({ initialPuzzle }) => {
+export const App: React.FC<AppProps> = ({ initialEntry, initialPuzzle }) => {
   return (
     <I18nProvider>
-      <GameMain initialPuzzle={initialPuzzle} />
+      <GameMain initialEntry={initialEntry} initialPuzzle={initialPuzzle} />
     </I18nProvider>
   );
 };
