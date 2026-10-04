@@ -11,6 +11,8 @@ interface LevelInfoModalProps {
   onClose: () => void;
   puzzle: PuzzleDefinition;
   isWon: boolean;
+  hasStarted: boolean;
+  onStart: () => void;
   moves: number;
   timeSeconds: number;
   record?: PuzzleRecord;
@@ -23,6 +25,8 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
   onClose,
   puzzle,
   isWon,
+  hasStarted,
+  onStart,
   moves,
   timeSeconds,
   record,
@@ -58,22 +62,11 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
       ? t.difficultyMedium
       : t.difficultyHard;
 
-  // Determine whether this level has a completed record to show (either won right now or previously won)
-  const hasCompletedRecord = isWon || Boolean(record);
-
-  // If completed (now or in the past), show the best completed record stats.
-  // Otherwise, show current in-progress stats with theoretical moves masked as "?".
-  const statMoves = isWon
-    ? moves
-    : record
-    ? record.moves
-    : moves;
-
-  const statTimeSeconds = isWon
-    ? timeSeconds
-    : record
-    ? record.timeSeconds
-    : timeSeconds;
+  // Historical records are shown only before starting a new round.
+  const showHistoricalRecord = !hasStarted && !isWon && Boolean(record);
+  const hasCompletedRecord = isWon || showHistoricalRecord;
+  const statMoves = showHistoricalRecord ? record!.moves : moves;
+  const statTimeSeconds = showHistoricalRecord ? record!.timeSeconds : timeSeconds;
 
   const mins = Math.floor(statTimeSeconds / 60);
   const secs = statTimeSeconds % 60;
@@ -155,7 +148,7 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
               ) : (
                 <span className="text-emerald-400">✓ {t.victoryGood}</span>
               )
-            ) : moves > 0 ? (
+            ) : hasStarted ? (
               <span className="text-amber-300/80">{t.inProgress}</span>
             ) : (
               <span className="text-zinc-400">{t.notStarted}</span>
@@ -229,11 +222,11 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
                 ) : (
                   <button
                     type="button"
-                    onClick={onClose}
+                    onClick={onStart}
                     className="w-full py-2.5 px-4 rounded-xl text-zinc-300 hover:text-white hover:bg-white/10 font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Play className="w-3 h-3 fill-current" />
-                    <span>{moves > 0 ? t.resume : t.play}</span>
+                    <span>{hasStarted ? t.resume : t.play}</span>
                   </button>
                 )}
               </>
@@ -241,11 +234,11 @@ export const LevelInfoModal: React.FC<LevelInfoModalProps> = ({
               /* Primary Start / Resume Button when not completed yet */
               <button
                 type="button"
-                onClick={onClose}
+                onClick={onStart}
                 className="w-full py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-sm transition-all select-none active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>{moves > 0 ? t.resume : t.play}</span>
+                <span>{hasStarted ? t.resume : t.play}</span>
               </button>
             )}
           </div>

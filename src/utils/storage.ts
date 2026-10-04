@@ -13,7 +13,8 @@ export interface SavedGameState {
   hash: string;
   stateHex: string;
   moves: number;
-  startTime: number | null;
+  hasStarted: boolean;
+  elapsedMs: number;
   historyHex: string[];
 }
 
@@ -34,15 +35,43 @@ function isRecord(value: unknown): value is PuzzleRecord {
     isNonnegativeInteger(value.moves) && isNonnegativeInteger(value.timeSeconds);
 }
 
-function isSavedState(value: unknown): value is SavedGameState {
-  return isObject(value) && isPuzzleHash(value.hash) &&
-    isNonnegativeInteger(value.puzzleId) && value.puzzleId > 0 &&
-    typeof value.stateHex === 'string' && /^0x[0-9a-f]+$/i.test(value.stateHex) &&
-    isNonnegativeInteger(value.moves) &&
-    (value.startTime === null || (isNonnegativeInteger(value.startTime) && value.startTime > 0)) &&
-    (value.moves === 0 || value.startTime !== null) &&
-    Array.isArray(value.historyHex) && value.historyHex.length === value.moves &&
-    value.historyHex.every(hex => typeof hex === 'string' && /^0x[0-9a-f]+$/i.test(hex));
+function parseSavedState(value: unknown): SavedGameState | null {
+  if (!isObject(value) || !isPuzzleHash(value.hash) ||
+      !isNonnegativeInteger(value.puzzleId) || value.puzzleId === 0 ||
+      typeof value.stateHex !== 'string' || !/^0x[0-9a-f]+$/i.test(value.stateHex) ||
+      !isNonnegativeInteger(value.moves) ||
+      !Array.isArray(value.historyHex) || value.historyHex.length !== value.moves ||
+      !value.historyHex.every(hex => typeof hex === 'string' && /^0x[0-9a-f]+$/i.test(hex))) {
+    return null;
+  }
+
+  let hasStarted: boolean;
+  let elapsedMs: number;
+  if (Object.hasOwn(value, 'hasStarted') || Object.hasOwn(value, 'elapsedMs')) {
+    if (typeof value.hasStarted !== 'boolean' ||
+        typeof value.elapsedMs !== 'number' || !Number.isFinite(value.elapsedMs) ||
+        value.elapsedMs < 0 || value.elapsedMs > Number.MAX_SAFE_INTEGER ||
+        (!value.hasStarted && (value.moves > 0 || value.elapsedMs > 0))) return null;
+    hasStarted = value.hasStarted;
+    elapsedMs = value.elapsedMs;
+  } else {
+    // Legacy timestamps include offline time, so preserve progress but reset the timer once.
+    if (!(value.startTime === null ||
+        (isNonnegativeInteger(value.startTime) && value.startTime > 0)) ||
+        (value.moves > 0 && value.startTime === null)) return null;
+    hasStarted = value.startTime !== null || value.moves > 0;
+    elapsedMs = 0;
+  }
+
+  return {
+    puzzleId: value.puzzleId,
+    hash: value.hash,
+    stateHex: value.stateHex,
+    moves: value.moves,
+    hasStarted,
+    elapsedMs,
+    historyHex: value.historyHex,
+  };
 }
 
 function readStorage(key: string): Record<string, unknown> {
@@ -74,10 +103,13 @@ export function cleanPuzzleStorage(puzzles: readonly PuzzleIdentity[]): void {
     try {
       const values = readStorage(key);
       for (const [id, value] of Object.entries(values)) {
-        const valid = key === RECORDS_KEY
-          ? isRecord(value)
-          : isSavedState(value) && String(value.puzzleId) === id;
-        if (!valid || !isObject(value) || value.hash !== hashes.get(id)) delete values[id];
+        const parsed = key === RECORDS_KEY
+          ? (isRecord(value) ? value : null)
+          : parseSavedState(value);
+        const valid = parsed !== null && parsed.hash === hashes.get(id) &&
+          (key === RECORDS_KEY || ('puzzleId' in parsed && String(parsed.puzzleId) === id));
+        if (!valid) delete values[id];
+        else values[id] = parsed;
       }
       const cleaned = JSON.stringify(values);
       const raw = localStorage.getItem(key);
@@ -116,9 +148,10 @@ export function savePuzzleRecord(puzzle: PuzzleIdentity, moves: number, timeSeco
 }
 
 export function loadSavedGameState(puzzle: PuzzleIdentity, model: BoardModel): SavedGameState | null {
-  const value = readStorage(IN_PROGRESS_KEY)[puzzle.id];
-  if (value === undefined) return null;
-  if (isSavedState(value) && value.puzzleId === puzzle.id && value.hash === puzzle.hash) {
+  const raw = readStorage(IN_PROGRESS_KEY)[puzzle.id];
+  if (raw === undefined) return null;
+  const value = parseSavedState(raw);
+  if (value && value.puzzleId === puzzle.id && value.hash === puzzle.hash) {
     try {
       const state = BigInt(value.stateHex);
       const history = value.historyHex.map(hex => BigInt(hex));
@@ -127,6 +160,7 @@ export function loadSavedGameState(puzzle: PuzzleIdentity, model: BoardModel): S
         inspectBoard(model, candidate).valid;
       if (validBoardState(state) && history.every(validBoardState) &&
           (history.length ? history[0] === model.initialState : state === model.initialState)) {
+        if (isObject(raw) && Object.hasOwn(raw, 'startTime')) saveGameState(value);
         return value;
       }
     } catch {
@@ -139,9 +173,10 @@ export function loadSavedGameState(puzzle: PuzzleIdentity, model: BoardModel): S
 
 export function saveGameState(state: SavedGameState): void {
   try {
-    if (!isSavedState(state)) return;
+    const parsed = parseSavedState(state);
+    if (!parsed) return;
     const states = readStorage(IN_PROGRESS_KEY);
-    states[state.puzzleId] = state;
+    states[parsed.puzzleId] = parsed;
     localStorage.setItem(IN_PROGRESS_KEY, JSON.stringify(states));
   } catch (err) {
     console.error('Failed to save game state:', err);

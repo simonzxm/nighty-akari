@@ -4,12 +4,14 @@ import { useI18n } from '../i18n';
 
 interface ResetConfirmModalProps {
   isOpen: boolean;
+  keepsTime: boolean;
   onClose: () => void;
   onConfirm: () => void;
 }
 
 export const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({
   isOpen,
+  keepsTime,
   onClose,
   onConfirm,
 }) => {
@@ -31,6 +33,11 @@ export const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({
         <h3 className="text-base font-semibold text-white mb-1">
           {t.clearConfirm}
         </h3>
+        {keepsTime && (
+          <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+            {t.clearKeepsTime}
+          </p>
+        )}
 
         <div className="flex gap-2.5 mt-5">
           <button
