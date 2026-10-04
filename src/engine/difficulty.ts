@@ -2,7 +2,10 @@ import { inspectBoard, transitionLight } from './core';
 import type { BoardInspection, BoardModel, PuzzleDefinition } from './types';
 
 /** Rating version is independent of the expensive exact-solution cache. */
-export const ANALYSIS_VERSION = 3;
+export const ANALYSIS_VERSION = 4;
+export const MINIMUM_PUZZLE_SCORE = 5;
+export const MEDIUM_DIFFICULTY_SCORE = 15;
+export const HARD_DIFFICULTY_SCORE = 25;
 const PROBE_LIMIT = 4000;
 
 export type DifficultyMetrics = {
@@ -189,5 +192,6 @@ export function rateDifficulty(metrics: DifficultyMetrics): { score: number; dif
     + 0.5 * metrics.regressions
     + 0.5 * metrics.planningDepth
   ) * 10) / 10;
-  return { score, difficulty: score < 8 ? 'easy' : score < 17 ? 'medium' : 'hard' };
+  return { score, difficulty: score < MEDIUM_DIFFICULTY_SCORE ? 'easy' :
+    score < HARD_DIFFICULTY_SCORE ? 'medium' : 'hard' };
 }

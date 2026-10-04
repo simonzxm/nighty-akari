@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { buildBoard } from '../src/engine/core';
 import { solvePuzzle, SOLVER_VERSION } from '../src/engine/solver';
-import { analyzeDifficulty, rateDifficulty, ANALYSIS_VERSION } from '../src/engine/difficulty';
+import { analyzeDifficulty, rateDifficulty, ANALYSIS_VERSION, MINIMUM_PUZZLE_SCORE } from '../src/engine/difficulty';
 import type { PuzzleDefinition, PuzzleIndexEntry, PuzzleInput } from '../src/engine/types';
 
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -68,6 +68,7 @@ export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleIn
   if (!files.length) throw new Error('No puzzle JSON files in puzzles/source');
   const puzzles: PuzzleDefinition[] = [];
   const report = [];
+  const rejected: string[] = [];
 
   for (const [index, file] of files.entries()) {
     const id = index + 1;
@@ -87,6 +88,9 @@ export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleIn
     if (!cached) await writeJson(cachePath, result);
     const metrics = analyzeDifficulty(board, result);
     const rating = rateDifficulty(metrics);
+    if (rating.score < MINIMUM_PUZZLE_SCORE) {
+      rejected.push(`${file} (id ${id}): score ${rating.score} < minimum ${MINIMUM_PUZZLE_SCORE}`);
+    }
     const date = new Date(`${START_DATE}T00:00:00Z`);
     date.setUTCDate(date.getUTCDate() + index);
     puzzles.push({
@@ -101,7 +105,11 @@ export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleIn
     console.log(`  discovery ${metrics.discoveryEffort.toFixed(1)}x, planning ${metrics.planningDepth}, probes ${metrics.probeSolved}/8 solved`);
   }
 
-  // Replace local output only after every source puzzle is fully analyzed.
+  if (rejected.length) {
+    throw new Error(`${rejected.length} puzzles below the minimum difficulty; generated output unchanged:\n${rejected.join('\n')}`);
+  }
+
+  // Replace local output only after every source puzzle is fully analyzed and accepted.
   await rm(GENERATED, { recursive: true, force: true });
   const index: PuzzleIndexEntry[] = [];
   for (const { rows, seed, ...metadata } of puzzles) {

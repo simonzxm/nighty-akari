@@ -62,12 +62,13 @@ score = 2 × log2(discoveryEffort)
       + 0.5 × regressions
       + 0.5 × planningDepth
 
-easy:   score < 8
-medium: 8 ≤ score < 17
-hard:   score ≥ 17
+rejected: score < 5 (entire build/publication fails)
+easy:     5 ≤ score < 15
+medium:  15 ≤ score < 25
+hard:    score ≥ 25
 ```
 
-The score is rounded to one decimal before classification. `discoveryEffort` is at least 1: the median number of unique states explored by eight deterministic, locally guided probes, divided by `optimalMoves + 1`. Probes prefer increasing illuminated area and satisfying numbered targets. They also apply basic final-lamp constraint propagation: a filled target excludes remaining lamps, a target that needs every remaining candidate forces them on, and an uncovered square with one remaining candidate forces that lamp on. These are **final-state** deductions; excluded lamps remain legal as temporary relays. Inferred final-lamp agreement is an additional move preference, not a legality constraint.
+The score is rounded to one decimal before classification and minimum-score validation. Every puzzle must score at least 5; the build lists all below-minimum puzzles and aborts before changing any generated files. Publication runs this same validation before any upload. Sources are never automatically skipped or deleted. `discoveryEffort` is at least 1: the median number of unique states explored by eight deterministic, locally guided probes, divided by `optimalMoves + 1`. Probes prefer increasing illuminated area and satisfying numbered targets. They also apply basic final-lamp constraint propagation: a filled target excludes remaining lamps, a target that needs every remaining candidate forces them on, and an uncovered square with one remaining candidate forces that lamp on. These are **final-state** deductions; excluded lamps remain legal as temporary relays. Inferred final-lamp agreement is an additional move preference, not a legality constraint.
 
 Each probe uses a different row/column order and axis direction to resolve ties. It may backtrack and explore solutions up to `optimalMoves + max(6, ceil(optimalMoves / 2))` moves, with caps of 4,000 unique states and 16,000 visits. An unfinished probe records its explored count and unsuccessful status; it neither proves unsolvability nor affects the exact solver's result. Capped scores can underestimate especially difficult boards. `probeSolved` and `probeStates` in the report make this limitation visible.
 
