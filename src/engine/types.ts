@@ -23,6 +23,7 @@ export type PuzzleInput = {
 
 export type PuzzleMetadata = {
   id: number;
+  hash: string; // SHA-256 of rows and seed, independent of metadata and solver versions
   date: string; // YYYY-MM-DD
   optimalMoves: number;
   difficulty: 'easy' | 'medium' | 'hard';

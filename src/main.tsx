@@ -1,7 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { loadPuzzleIndex, loadPuzzle } from './data/puzzles';
+import { loadPuzzleIndex, loadPuzzle, PUZZLE_INDEX } from './data/puzzles';
+import { cleanPuzzleStorage } from './utils/storage';
 import { getDailyPuzzle } from './utils/daily';
 import './index.css';
 
@@ -10,6 +11,7 @@ async function startGame(): Promise<void> {
   const daily = getDailyPuzzle();
   if (!daily) return;
   const initialPuzzle = await loadPuzzle(daily);
+  cleanPuzzleStorage(PUZZLE_INDEX);
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <App initialPuzzle={initialPuzzle} />

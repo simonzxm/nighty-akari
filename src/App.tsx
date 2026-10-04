@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Info, HelpCircle, RotateCcw, Undo2 } from 'lucide-react';
 import { I18nProvider, useI18n } from './i18n';
-import { loadPuzzle } from './data/puzzles';
+import { loadPuzzle, PUZZLE_INDEX } from './data/puzzles';
 import { buildBoard, inspectBoard, tryToggleLight } from './engine/core';
 import type { PuzzleDefinition, PuzzleIndexEntry } from './engine/types';
 import {
@@ -29,44 +29,22 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
   const selectionRequest = useRef(0);
   const model = useMemo(() => buildBoard(currentPuzzle), [currentPuzzle]);
 
-  // Board state & history
-  const [state, setState] = useState<bigint>(() => {
-    const saved = loadSavedGameState(currentPuzzle.id);
-    if (saved) {
-      try {
-        return BigInt(saved.stateHex);
-      } catch {}
-    }
-    return model.initialState;
-  });
-
-  const [history, setHistory] = useState<Array<{ state: bigint; moves: number }>>(() => {
-    const saved = loadSavedGameState(currentPuzzle.id);
-    if (saved && saved.historyHex) {
-      try {
-        return saved.historyHex.map((hex, idx) => ({
-          state: BigInt(hex),
-          moves: idx,
-        }));
-      } catch {}
-    }
-    return [];
-  });
-
-  const [moves, setMoves] = useState<number>(() => {
-    const saved = loadSavedGameState(currentPuzzle.id);
-    return saved ? saved.moves : 0;
-  });
-
-  const [startTime, setStartTime] = useState<number | null>(() => {
-    const saved = loadSavedGameState(currentPuzzle.id);
-    return saved?.startTime || null;
-  });
-
-  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  // Validate the full saved game once so board, timer and history restore together.
+  const [initialSaved] = useState(() => loadSavedGameState(initialPuzzle, model));
+  const [state, setState] = useState<bigint>(() =>
+    initialSaved ? BigInt(initialSaved.stateHex) : model.initialState
+  );
+  const [history, setHistory] = useState<Array<{ state: bigint; moves: number }>>(() =>
+    initialSaved ? initialSaved.historyHex.map((hex, moves) => ({ state: BigInt(hex), moves })) : []
+  );
+  const [moves, setMoves] = useState<number>(initialSaved?.moves ?? 0);
+  const [startTime, setStartTime] = useState<number | null>(initialSaved?.startTime ?? null);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(() =>
+    initialSaved?.startTime ? Math.max(0, Math.floor((Date.now() - initialSaved.startTime) / 1000)) : 0
+  );
 
   // Solved records
-  const [records, setRecords] = useState<Record<number, PuzzleRecord>>(() => loadAllRecords());
+  const [records, setRecords] = useState<Record<number, PuzzleRecord>>(() => loadAllRecords(PUZZLE_INDEX));
 
   // Unified Level Info / Victory modal opens automatically on start
   const [isLevelInfoOpen, setIsLevelInfoOpen] = useState(true);
@@ -90,32 +68,14 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
     }
     if (request !== selectionRequest.current) return;
     const newModel = buildBoard(newPuzzle);
+    const saved = loadSavedGameState(newPuzzle, newModel);
     setCurrentPuzzle(newPuzzle);
-    const saved = loadSavedGameState(newPuzzle.id);
-
-    if (saved) {
-      try {
-        setState(BigInt(saved.stateHex));
-        setMoves(saved.moves);
-        setStartTime(saved.startTime);
-        setHistory(
-          (saved.historyHex || []).map((hex, idx) => ({
-            state: BigInt(hex),
-            moves: idx,
-          }))
-        );
-        setIsArchiveOpen(false);
-        setIsResetConfirmOpen(false);
-        setIsLevelInfoOpen(true);
-        return;
-      } catch {}
-    }
-
-    setState(newModel.initialState);
-    setMoves(0);
-    setStartTime(null);
-    setHistory([]);
-    setElapsedSeconds(0);
+    setState(saved ? BigInt(saved.stateHex) : newModel.initialState);
+    setMoves(saved?.moves ?? 0);
+    setStartTime(saved?.startTime ?? null);
+    setHistory(saved ? saved.historyHex.map((hex, moves) => ({ state: BigInt(hex), moves })) : []);
+    setElapsedSeconds(saved?.startTime ? Math.max(0, Math.floor((Date.now() - saved.startTime) / 1000)) : 0);
+    setRecords(loadAllRecords(PUZZLE_INDEX));
     setIsArchiveOpen(false);
     setIsResetConfirmOpen(false);
     setIsLevelInfoOpen(true);
@@ -125,7 +85,7 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
   useEffect(() => {
     if (!startTime || inspection.won) return;
     const interval = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startTime) / 1000)));
     }, 1000);
     return () => clearInterval(interval);
   }, [startTime, inspection.won]);
@@ -136,26 +96,27 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
       const finalTime = startTime ? Math.max(1, Math.floor((Date.now() - startTime) / 1000)) : 1;
       setElapsedSeconds(finalTime);
 
-      savePuzzleRecord(currentPuzzle.id, moves, finalTime);
-      setRecords(loadAllRecords());
+      savePuzzleRecord(currentPuzzle, moves, finalTime);
+      setRecords(loadAllRecords(PUZZLE_INDEX));
       setIsLevelInfoOpen(true);
     }
-  }, [inspection.won, currentPuzzle.id, moves, startTime]);
+  }, [inspection.won, currentPuzzle, moves, startTime]);
 
   // Save in-progress state to localStorage
   useEffect(() => {
     if (inspection.won) {
-      clearSavedGameState(currentPuzzle.id);
+      clearSavedGameState(currentPuzzle);
     } else {
       saveGameState({
         puzzleId: currentPuzzle.id,
+        hash: currentPuzzle.hash,
         stateHex: `0x${state.toString(16)}`,
         moves,
         startTime,
         historyHex: history.map((h) => `0x${h.state.toString(16)}`),
       });
     }
-  }, [currentPuzzle.id, state, moves, startTime, history, inspection.won]);
+  }, [currentPuzzle, state, moves, startTime, history, inspection.won]);
 
   // Handle cell click / toggle
   const handleToggleCell = useCallback(
@@ -202,13 +163,13 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
 
   // Restart action
   const handleRestart = useCallback(() => {
-    clearSavedGameState(currentPuzzle.id);
+    clearSavedGameState(currentPuzzle);
     setState(model.initialState);
     setHistory([]);
     setMoves(0);
     setStartTime(null);
     setElapsedSeconds(0);
-  }, [currentPuzzle.id, model.initialState]);
+  }, [currentPuzzle, model.initialState]);
 
   // Keyboard controls
   useEffect(() => {

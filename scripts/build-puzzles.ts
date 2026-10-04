@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { buildBoard } from '../src/engine/core';
+import { serializePuzzleContent } from '../src/engine/puzzleHash';
 import { solvePuzzle, SOLVER_VERSION } from '../src/engine/solver';
 import { analyzeDifficulty, rateDifficulty, ANALYSIS_VERSION, MINIMUM_PUZZLE_SCORE } from '../src/engine/difficulty';
 import type { PuzzleDefinition, PuzzleIndexEntry, PuzzleInput } from '../src/engine/types';
@@ -74,10 +75,11 @@ export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleIn
     const id = index + 1;
     const input: PuzzleInput = JSON.parse(await readFile(resolve(SOURCE, file), 'utf8'));
     const board = buildBoard({ ...input, id });
-    const hash = createHash('sha256').update(JSON.stringify({
+    const hash = createHash('sha256').update(serializePuzzleContent(input)).digest('hex');
+    const solverCacheHash = createHash('sha256').update(JSON.stringify({
       version: SOLVER_VERSION, rows: input.rows, seed: input.seed,
     })).digest('hex');
-    const cachePath = resolve(CACHE, `${hash}.json`);
+    const cachePath = resolve(CACHE, `${solverCacheHash}.json`);
     const started = performance.now();
     const cached = await readCached(cachePath);
     console.log(`[${id}/${files.length}] ${file}: ${cached ? 'cached' : 'solving'}`);
@@ -94,7 +96,7 @@ export async function buildPuzzles(options: BuildOptions = {}): Promise<PuzzleIn
     const date = new Date(`${START_DATE}T00:00:00Z`);
     date.setUTCDate(date.getUTCDate() + index);
     puzzles.push({
-      id, date: date.toISOString().slice(0, 10), rows: input.rows, seed: input.seed,
+      id, hash, date: date.toISOString().slice(0, 10), rows: input.rows, seed: input.seed,
       optimalMoves: result.optimalMoves, difficulty: rating.difficulty,
     });
     report.push({
