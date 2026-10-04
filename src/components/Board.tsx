@@ -2,12 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { BoardModel, BoardInspection } from '../engine/types';
 import { WhiteCell, WallCell } from './CellView';
 
+export interface BoardRejection {
+  cellIndex: number;
+  reason: 'seed_permanent' | 'not_illuminated' | 'wall_limit_exceeded';
+  wallIndex?: number;
+  id: number;
+}
+
 interface BoardProps {
   model: BoardModel;
   state: bigint;
   inspection: BoardInspection;
   onToggleCell: (cellIndex: number) => void;
   isWon: boolean;
+  rejection?: BoardRejection | null;
 }
 
 export const Board: React.FC<BoardProps> = ({
@@ -16,6 +24,7 @@ export const Board: React.FC<BoardProps> = ({
   inspection,
   onToggleCell,
   isWon,
+  rejection,
 }) => {
   const [hoveredCellIndex, setHoveredCellIndex] = useState<number | null>(null);
 
@@ -144,6 +153,10 @@ export const Board: React.FC<BoardProps> = ({
               const isSeed = cellIdx === model.seedIndex;
               const isInPreview = supportsHover && (previewLitMask & bit) !== 0n;
               const isHovered = supportsHover && hoveredCellIndex === cellIdx;
+              const cellRejection =
+                rejection && rejection.cellIndex === cellIdx
+                  ? { type: rejection.reason, id: rejection.id }
+                  : null;
 
               return (
                 <WhiteCell
@@ -157,6 +170,7 @@ export const Board: React.FC<BoardProps> = ({
                   isInPreviewRay={isInPreview}
                   isHovered={isHovered}
                   canPlace={isLit && !hasBulb}
+                  rejection={cellRejection}
                   onClick={() => handleToggle(cellIdx)}
                   onMouseEnter={() => handleMouseEnter(cellIdx)}
                   onMouseLeave={handleMouseLeave}
@@ -166,6 +180,8 @@ export const Board: React.FC<BoardProps> = ({
 
             if (wallIdx !== undefined) {
               const wall = model.walls[wallIdx];
+              const isWallRejected = Boolean(rejection && rejection.wallIndex === wallIdx);
+
               return (
                 <WallCell
                   key={key}
@@ -173,6 +189,8 @@ export const Board: React.FC<BoardProps> = ({
                   wallIndex={wallIdx}
                   currentCount={inspection.counts[wallIdx] || 0}
                   previewViolated={previewViolatedWalls.has(wallIdx)}
+                  isRejectedFlash={isWallRejected}
+                  rejectionId={isWallRejected ? rejection!.id : undefined}
                   r={vr}
                   c={vc}
                 />

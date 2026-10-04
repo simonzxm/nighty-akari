@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BulbIcon } from './BulbIcon';
 import { WallData } from '../engine/types';
+
+export interface CellRejection {
+  type: 'seed_permanent' | 'not_illuminated' | 'wall_limit_exceeded';
+  id: number;
+}
 
 interface WhiteCellProps {
   r: number;
@@ -12,6 +17,7 @@ interface WhiteCellProps {
   isInPreviewRay: boolean;
   isHovered: boolean;
   canPlace: boolean;
+  rejection?: CellRejection | null;
   onClick: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
@@ -22,6 +28,8 @@ interface WallCellProps {
   wallIndex: number;
   currentCount: number;
   previewViolated: boolean;
+  isRejectedFlash?: boolean;
+  rejectionId?: number;
   r?: number;
   c?: number;
 }
@@ -35,6 +43,7 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
   isInPreviewRay,
   isHovered,
   canPlace,
+  rejection,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -65,8 +74,30 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
     bgClass = 'bg-[#fde68a] border border-amber-400/70 shadow-[inset_0_0_10px_rgba(245,158,11,0.25)]';
   }
 
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (rejection && buttonRef.current) {
+      buttonRef.current.style.animation = 'none';
+      void buttonRef.current.offsetHeight;
+      buttonRef.current.style.animation = '';
+    }
+  }, [rejection?.id]);
+
+  let rejectionAnimClass = '';
+  if (rejection) {
+    if (rejection.type === 'seed_permanent') {
+      rejectionAnimClass = 'animate-moon-reject ring-2 ring-amber-300/80 shadow-[0_0_14px_rgba(251,191,36,0.5)]';
+    } else if (rejection.type === 'not_illuminated') {
+      rejectionAnimClass = 'animate-dark-reject border-slate-400/70 shadow-[inset_0_0_8px_rgba(148,163,184,0.25)]';
+    } else if (rejection.type === 'wall_limit_exceeded') {
+      rejectionAnimClass = 'animate-cell-reject border-rose-500/80 shadow-[0_0_12px_rgba(244,63,94,0.45)]';
+    }
+  }
+
   return (
     <button
+      ref={buttonRef}
       type="button"
       tabIndex={0}
       aria-label={`Row ${r + 1}, Col ${c + 1}, ${
@@ -81,7 +112,7 @@ export const WhiteCell: React.FC<WhiteCellProps> = ({
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className={`relative w-full h-full aspect-square rounded-md sm:rounded-lg transition-all duration-150 flex items-center justify-center select-none outline-none ${cursorClass} ${bgClass}`}
+      className={`relative w-full h-full aspect-square rounded-md sm:rounded-lg transition-all duration-150 flex items-center justify-center select-none outline-none ${cursorClass} ${bgClass} ${rejectionAnimClass}`}
     >
       {/* Placed Lamp / Celestial Moon */}
       {hasBulb && (
@@ -105,6 +136,8 @@ export const WallCell: React.FC<WallCellProps> = ({
   wall,
   currentCount,
   previewViolated,
+  isRejectedFlash,
+  rejectionId,
   r,
   c,
 }) => {
@@ -116,11 +149,26 @@ export const WallCell: React.FC<WallCellProps> = ({
   const displayR = r !== undefined ? r : wall.r;
   const displayC = c !== undefined ? c : wall.c;
 
+  const wallRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isRejectedFlash && wallRef.current) {
+      wallRef.current.style.animation = 'none';
+      void wallRef.current.offsetHeight;
+      wallRef.current.style.animation = '';
+    }
+  }, [rejectionId, isRejectedFlash]);
+
   // Obsidian wall block styling with inset depth
   let textStyle = 'text-zinc-100 font-bold';
   let bgStyle = 'bg-[#06070a] border border-zinc-800/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)]';
+  let wallAnimClass = '';
 
-  if (isSatisfied) {
+  if (isRejectedFlash) {
+    textStyle = 'text-rose-300 font-bold';
+    bgStyle = 'bg-rose-950/70 border border-rose-500/70 shadow-[0_0_14px_rgba(244,63,94,0.45)]';
+    wallAnimClass = 'animate-wall-reject';
+  } else if (isSatisfied) {
     // Satisfied condition: warm amber fulfillment with soft aura
     textStyle = 'text-amber-300 font-bold';
     bgStyle = 'bg-[#18150c] border border-amber-400/50 shadow-[0_0_12px_rgba(245,158,11,0.22),inset_0_1px_3px_rgba(245,158,11,0.15)]';
@@ -132,10 +180,11 @@ export const WallCell: React.FC<WallCellProps> = ({
 
   return (
     <div
+      ref={wallRef}
       aria-label={`Wall at row ${displayR + 1}, col ${displayC + 1}${
         isNumbered ? `, target ${target}, current ${currentCount}` : ', solid obstacle'
       }`}
-      className={`relative w-full h-full aspect-square rounded-md sm:rounded-lg select-none flex items-center justify-center font-mono transition-colors duration-150 ${bgStyle} ${textStyle}`}
+      className={`relative w-full h-full aspect-square rounded-md sm:rounded-lg select-none flex items-center justify-center font-mono transition-colors duration-150 ${bgStyle} ${textStyle} ${wallAnimClass}`}
     >
       {isNumbered ? (
         <span

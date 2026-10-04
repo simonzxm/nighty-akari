@@ -27,11 +27,6 @@ export const translations = {
     difficultyEasy: 'Easy',
     difficultyMedium: 'Medium',
     difficultyHard: 'Hard',
-    // In game errors / notifications (subtle, non-intrusive)
-    errSeedPermanent: 'The initial celestial moon cannot be extinguished.',
-    errNotLit: 'You can only place a light on an illuminated square.',
-    errWallLimit: (r: number, c: number, limit: string) =>
-      `Exceeds limit on block (${r}, ${c}) [max ${limit}].`,
     // Victory & Sharing
     victoryTitle: 'Night Illuminated',
     victoryOptimal: 'Optimal Solution Reached!',
@@ -93,11 +88,6 @@ export const translations = {
     difficultyEasy: '简单',
     difficultyMedium: '中等',
     difficultyHard: '困难',
-    // In game errors
-    errSeedPermanent: '初始月亮光源无法熄灭。',
-    errNotLit: '只能在已被光线照亮的格子上放灯。',
-    errWallLimit: (r: number, c: number, limit: string) =>
-      `第 ${r} 行第 ${c} 列的黑块超限（上限 ${limit}）。`,
     // Victory & Sharing
     victoryTitle: '夜色已全部照亮',
     victoryOptimal: '完美达成最短解！',

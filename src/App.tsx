@@ -13,8 +13,7 @@ import {
   PuzzleRecord,
 } from './utils/storage';
 import { createGameTimer, getElapsedMs, pauseGameTimer, resumeGameTimer } from './utils/gameTimer';
-import { Board } from './components/Board';
-import { Toast } from './components/Toast';
+import { Board, BoardRejection } from './components/Board';
 import { LevelInfoModal } from './components/LevelInfoModal';
 import { ArchiveModal } from './components/ArchiveModal';
 import { HowToPlayModal } from './components/HowToPlayModal';
@@ -53,7 +52,8 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [rejection, setRejection] = useState<BoardRejection | null>(null);
+  const rejectionTimeout = useRef<number | null>(null);
 
   // Board inspection
   const inspection = useMemo(() => inspectBoard(model, state), [model, state]);
@@ -117,6 +117,7 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
     setHistory(saved ? saved.historyHex.map((hex, moves) => ({ state: BigInt(hex), moves })) : []);
     setElapsedSeconds(Math.floor((saved?.elapsedMs ?? 0) / 1000));
     setRecords(loadAllRecords(PUZZLE_INDEX));
+    setRejection(null);
     setIsArchiveOpen(false);
     setIsHowToPlayOpen(false);
     setIsResetConfirmOpen(false);
@@ -167,6 +168,14 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
     return () => window.clearInterval(interval);
   }, [sessionActive, inspection.won, persistCurrentGame]);
 
+  useEffect(() => {
+    return () => {
+      if (rejectionTimeout.current !== null) {
+        window.clearTimeout(rejectionTimeout.current);
+      }
+    };
+  }, []);
+
   // Handle cell click / toggle
   const handleToggleCell = useCallback(
     (cellIndex: number) => {
@@ -178,13 +187,24 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
       const result = tryToggleLight(model, state, cellIndex);
 
       if (!result.ok) {
-        if (result.reasonKey === 'seed_permanent') {
-          setToastMessage(t.errSeedPermanent);
-        } else if (result.reasonKey === 'not_illuminated') {
-          setToastMessage(t.errNotLit);
-        } else if (result.reasonKey === 'wall_limit_exceeded') {
-          const badWall = model.walls[result.wallIndex!];
-          setToastMessage(t.errWallLimit(badWall.r + 1, badWall.c + 1, badWall.value));
+        if (
+          result.reasonKey === 'seed_permanent' ||
+          result.reasonKey === 'not_illuminated' ||
+          result.reasonKey === 'wall_limit_exceeded'
+        ) {
+          if (rejectionTimeout.current !== null) {
+            window.clearTimeout(rejectionTimeout.current);
+          }
+          setRejection({
+            cellIndex,
+            reason: result.reasonKey,
+            wallIndex: result.wallIndex,
+            id: Date.now(),
+          });
+          rejectionTimeout.current = window.setTimeout(() => {
+            setRejection(null);
+            rejectionTimeout.current = null;
+          }, 300);
         }
         return;
       }
@@ -194,7 +214,7 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
       setState(result.state);
       setMoves((m) => m + 1);
     },
-    [inspection.won, model, state, moves, sessionActive, t]
+    [inspection.won, model, state, moves, sessionActive]
   );
 
   // Undo action
@@ -211,6 +231,7 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
     setState(model.initialState);
     setHistory([]);
     setMoves(0);
+    setRejection(null);
     if (inspection.won) {
       timer.current = createGameTimer();
       timer.current.hasStarted = true;
@@ -308,11 +329,9 @@ const GameMain: React.FC<AppProps> = ({ initialPuzzle }) => {
           inspection={inspection}
           onToggleCell={handleToggleCell}
           isWon={inspection.won}
+          rejection={rejection}
         />
       </main>
-
-      {/* Toast for error or feedback notifications */}
-      <Toast message={toastMessage} onClear={() => setToastMessage(null)} />
 
       {/* Unified Level Info & Settlement Modal */}
       <LevelInfoModal

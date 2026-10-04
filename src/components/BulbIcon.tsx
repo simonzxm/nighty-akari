@@ -15,7 +15,7 @@ export const BulbIcon: React.FC<BulbIconProps> = ({ isSeed = false, className = 
 
         {/* Crisp, brilliant pure-white crescent moon */}
         <Moon
-          className="relative w-[70%] h-[70%] max-w-[44px] max-h-[44px] text-white fill-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)] animate-pop"
+          className="relative w-[70%] h-[70%] max-w-[44px] max-h-[44px] text-white fill-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
           strokeWidth={1}
         />
       </div>
